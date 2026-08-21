@@ -6,10 +6,9 @@ const dir = path.join(__dirname);
 
 async function initAndCommit() {
   try {
-    console.log('🚀 Inicializando repositório Git local...');
+    console.log('🚀 Inicializando repositório Git com autor GitHub verificado...');
     await git.init({ fs, dir, defaultBranch: 'main' });
 
-    // Função recursiva para listar arquivos
     function getFiles(currentDir, relativePath = '') {
       const entries = fs.readdirSync(currentDir, { withFileTypes: true });
       let files = [];
@@ -33,21 +32,24 @@ async function initAndCommit() {
       await git.add({ fs, dir, filepath });
     }
 
-    console.log('💾 Criando commit inicial...');
+    console.log('💾 Criando commit com usuário victor1308code...');
     const sha = await git.commit({
       fs,
       dir,
-      message: 'feat: Plataforma Gestão SaaS Multi-Tenant Completa',
+      message: 'feat: Gestão SaaS Multi-Tenant (Vercel Release)',
       author: {
-        name: 'Victor',
-        email: 'admin@gestaotalentos.com.br'
+        name: 'victor1308code',
+        email: 'victor1308code@users.noreply.github.com'
+      },
+      committer: {
+        name: 'victor1308code',
+        email: 'victor1308code@users.noreply.github.com'
       }
     });
 
-    console.log(`✅ Repositório Git inicializado e commit criado com sucesso!`);
-    console.log(`📌 Commit SHA: ${sha}`);
+    console.log(`✅ Commit criado com sucesso! SHA: ${sha}`);
   } catch (err) {
-    console.error('Erro ao inicializar Git:', err);
+    console.error('Erro ao criar commit:', err);
   }
 }
 
