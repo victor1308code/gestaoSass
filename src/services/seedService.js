@@ -4,6 +4,10 @@ const HASH_SENHA123 = '$2b$10$kKtlBptWLGLNfw9829y6ROUFxn9aNDDgr/e9BjPQEsGkcCJbqd
 const HASH_ADMIN123 = '$2b$10$LKLglZCRHVpJtV7foLdkyeUnHHe3MfM8kJmK51TA1aY4.LZyIP3mq';
 
 function seedDatabase(db) {
+  if (!db) {
+    db = require('../config/database');
+  }
+
   try {
     // 1. Seed Planos
     const { totalPlanos } = db.prepare('SELECT COUNT(*) as totalPlanos FROM planos').get() || { totalPlanos: 0 };

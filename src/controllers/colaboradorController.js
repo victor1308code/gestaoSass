@@ -456,7 +456,7 @@ const colaboradorController = {
             if (cargoExistente) {
               cargoId = cargoExistente.id;
             } else {
-              const novoCargo = db.prepare('INSERT INTO cargos (empresa_id, nome_cargo, nivel) VALUES (?, ?, "Geral")').run(req.empresaId, item.cargo.trim());
+              const novoCargo = db.prepare("INSERT INTO cargos (empresa_id, nome_cargo, nivel) VALUES (?, ?, 'Geral')").run(req.empresaId, item.cargo.trim());
               cargoId = novoCargo.lastInsertRowid;
             }
           }
@@ -502,7 +502,7 @@ const colaboradorController = {
         `).run(req.empresaId, req.user.id, req.user.nome, `Importação em massa de ${inseridos} colaboradores via planilha`);
 
         db.exec('COMMIT');
-        return res.json({ success: true, message: `${inseridos} colaboradores importados com sucesso!` });
+        return res.json({ success: true, count: inseridos, total: inseridos, message: `${inseridos} colaboradores importados com sucesso!` });
       } catch (e) {
         db.exec('ROLLBACK');
         throw e;

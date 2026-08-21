@@ -37,20 +37,6 @@ app.use(session({
 // Servir arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Auto-seed middleware for serverless cold start
-let seeded = false;
-app.use(async (req, res, next) => {
-  if (!seeded) {
-    try {
-      await seedDatabase();
-      seeded = true;
-    } catch (e) {
-      console.error('Seed error:', e);
-    }
-  }
-  next();
-});
-
 // Rotas da API REST
 app.use('/api', apiRoutes);
 
@@ -68,15 +54,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erro interno no servidor: ' + (err.message || '') });
 });
 
-// Inicialização local
-if (!process.env.VERCEL) {
-  seedDatabase().then(() => {
+// Inicialização local apenas quando executado diretamente
+if (require.main === module) {
+  try {
+    seedDatabase(db);
     app.listen(ENV.PORT, () => {
       console.log(`🚀 Servidor Gestão SaaS rodando na porta ${ENV.PORT}`);
     });
-  }).catch(err => {
+  } catch (err) {
     console.error('Falha ao iniciar:', err);
-  });
+  }
 }
 
 module.exports = app;
