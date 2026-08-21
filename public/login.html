@@ -90,7 +90,7 @@
         <input type="password" id="login-password" class="form-control" placeholder="••••••••" required />
       </div>
 
-      <button type="submit" class="btn btn-green" style="width: 100%; padding: 11px; margin-top: 10px;">Entrar no Painel</button>
+      <button type="submit" id="login-submit-btn" class="btn btn-green" style="width: 100%; padding: 11px; margin-top: 10px;">Entrar no Painel</button>
 
       <!-- ACESSO DEMO -->
       <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color); text-align: center;">
@@ -128,7 +128,7 @@
         <input type="password" id="reg-senha" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6" required />
       </div>
 
-      <button type="submit" class="btn btn-green" style="width: 100%; padding: 11px; margin-top: 10px;">Criar Conta & Começar</button>
+      <button type="submit" id="reg-submit-btn" class="btn btn-green" style="width: 100%; padding: 11px; margin-top: 10px;">Criar Conta & Começar</button>
     </form>
   </div>
 
@@ -151,22 +151,31 @@
 
     async function handleLogin(e) {
       e.preventDefault();
+      const btn = document.getElementById('login-submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Autenticando...';
+
       const email = document.getElementById('login-email').value;
       const password = document.getElementById('login-password').value;
 
       try {
-        await API.login(email, password);
+        const res = await API.login(email, password);
         API.toast('Login realizado com sucesso! Redirecionando...', 'success');
         setTimeout(() => {
-          window.location.href = '/';
-        }, 600);
+          window.location.href = '/index.html';
+        }, 300);
       } catch (err) {
-        // Erro tratado
+        btn.disabled = false;
+        btn.textContent = 'Entrar no Painel';
       }
     }
 
     async function handleRegister(e) {
       e.preventDefault();
+      const btn = document.getElementById('reg-submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Criando conta...';
+
       const data = {
         nome_fantasia: document.getElementById('reg-empresa').value,
         nome_responsavel: document.getElementById('reg-responsavel').value,
@@ -175,13 +184,14 @@
       };
 
       try {
-        await API.register(data);
+        const res = await API.register(data);
         API.toast('Empresa criada com sucesso! Entrando...', 'success');
         setTimeout(() => {
-          window.location.href = '/';
-        }, 600);
+          window.location.href = '/index.html';
+        }, 300);
       } catch (err) {
-        // Erro tratado
+        btn.disabled = false;
+        btn.textContent = 'Criar Conta & Começar';
       }
     }
   </script>

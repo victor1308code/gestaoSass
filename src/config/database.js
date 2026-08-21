@@ -1,6 +1,7 @@
 const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
 const fs = require('fs');
+const { seedDatabase } = require('../services/seedService');
 
 // No Vercel, o único diretório com permissão de escrita em runtime é /tmp
 const dbPath = process.env.VERCEL
@@ -9,9 +10,9 @@ const dbPath = process.env.VERCEL
 
 const db = new DatabaseSync(dbPath);
 
-// Enable WAL mode & foreign keys for performance and data integrity
+// Configurações de concorrência e timeout para NUNCA dar "database is locked"
 db.exec(`
-  PRAGMA journal_mode = WAL;
+  PRAGMA busy_timeout = 5000;
   PRAGMA foreign_keys = ON;
 
   -- 1. PLANOS DE ASSINATURA DO SAAS
@@ -151,5 +152,8 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_crachas_empresa ON crachas_dados (empresa_id);
   CREATE INDEX IF NOT EXISTS idx_historico_empresa ON historico_movimentacoes (empresa_id);
 `);
+
+// Garante que o banco seja populado com os dados demo
+seedDatabase(db);
 
 module.exports = db;
