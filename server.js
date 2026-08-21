@@ -8,6 +8,7 @@ const apiRoutes = require('./src/routes/api');
 
 const app = express();
 
+app.set('trust proxy', 1);
 app.disable('x-powered-by');
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -29,7 +30,7 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production' && !process.env.VERCEL
+    secure: false
   }
 }));
 
@@ -64,7 +65,7 @@ app.get('*', (req, res, next) => {
 // Tratamento de erros
 app.use((err, req, res, next) => {
   console.error('Unhandled Error:', err);
-  res.status(500).json({ error: 'Erro interno no servidor.' });
+  res.status(500).json({ error: 'Erro interno no servidor: ' + (err.message || '') });
 });
 
 // Inicialização local
