@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestão SaaS — Painel Organizacional</title>
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/css/organograma.css" />
+  <link rel="stylesheet" href="/css/carometro.css" />
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- SIDEBAR ESCURA (TALENTOS UI) -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo-icon">▲</div>
+        <div class="brand-title" id="sidebar-company-name">Talentos</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <!-- PRINCIPAL -->
+        <a class="nav-link active" data-view="dashboard" onclick="App.navigate('dashboard')">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </a>
+
+        <!-- GESTÃO DOS TIMES -->
+        <div class="nav-section-title">Gestão dos Times</div>
+        <a class="nav-link" data-view="departamentos" onclick="App.navigate('departamentos')">
+          <span class="nav-icon">🏢</span>
+          <span>Departamentos</span>
+        </a>
+        <a class="nav-link" data-view="cargos" onclick="App.navigate('departamentos')">
+          <span class="nav-icon">💼</span>
+          <span>Cargos & Funções</span>
+        </a>
+        <a class="nav-link" data-view="colaboradores" onclick="App.navigate('colaboradores')">
+          <span class="nav-icon">👥</span>
+          <span>Contratados (Colaboradores)</span>
+        </a>
+        <a class="nav-link" data-view="usuarios" onclick="App.navigate('configuracoes')">
+          <span class="nav-icon">👤</span>
+          <span>Usuários & Acessos</span>
+        </a>
+
+        <!-- ESTRUTURA VISUAL -->
+        <div class="nav-section-title">Estrutura & Visões</div>
+        <a class="nav-link" data-view="organograma" onclick="App.navigate('organograma')">
+          <span class="nav-icon">🌳</span>
+          <span>Organograma</span>
+        </a>
+        <a class="nav-link" data-view="carometro" onclick="App.navigate('carometro')">
+          <span class="nav-icon">🧑‍🤝‍🧑</span>
+          <span>Carômetro (Fotos)</span>
+        </a>
+
+        <!-- AUDITORIA & HISTÓRICO -->
+        <div class="nav-section-title">Recrutamento & Auditoria</div>
+        <a class="nav-link" data-view="historico" onclick="App.navigate('historico')">
+          <span class="nav-icon">📜</span>
+          <span>Histórico & Movimentações</span>
+        </a>
+
+        <!-- CONFIGURAÇÕES -->
+        <div class="nav-section-title">Sistema</div>
+        <a class="nav-link" data-view="configuracoes" onclick="App.navigate('configuracoes')">
+          <span class="nav-icon">⚙️</span>
+          <span>Configurações</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-summary">
+          <div class="user-avatar-circle" id="user-avatar-initials">A</div>
+          <div class="user-details">
+            <div class="user-name" id="user-display-name">Admin</div>
+            <div class="user-role-badge" id="user-display-role">admin</div>
+          </div>
+        </div>
+        <button class="btn-icon" onclick="App.logout()" title="Encerrar Sessão" style="color:#94a3b8; background:none; border:none; cursor:pointer; font-size:16px;">🚪</button>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="main-wrapper">
+      <!-- TOPBAR BRANCA LIMPA -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="btn-sidebar-toggle" title="Menu">🖼️</button>
+        </div>
+
+        <div class="topbar-right">
+          <div class="badge-role-btn">
+            <span>⚙️</span>
+            <span id="topbar-role-label">Admin ▾</span>
+          </div>
+
+          <button class="user-header-pill" onclick="App.navigate('configuracoes')">
+            <div class="user-header-avatar" id="topbar-avatar-circle">A</div>
+            <span id="topbar-user-email">admin@gestaotalentos.com.br ▾</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- BREADCRUMBS & ACTION HEADER -->
+      <div class="page-top-nav">
+        <div class="breadcrumbs" id="page-breadcrumbs">
+          <a href="#dashboard">Dashboard</a>
+          <span>/</span>
+          <span id="breadcrumb-current-view">Painel Geral</span>
+        </div>
+
+        <div class="page-header-row">
+          <div class="page-title-group">
+            <h1 id="topbar-page-title">Relatório de Gestão & Dashboard</h1>
+            <div class="page-subtitle" id="topbar-page-subtitle">
+              <span>🕒</span> <span id="topbar-timestamp">Relatório gerado em tempo real</span>
+            </div>
+          </div>
+
+          <div class="header-action-buttons">
+            <button class="btn btn-link" onclick="App.navigate('carometro')">👁 Ver Fotos</button>
+            <button class="btn btn-outline" onclick="App.reloadCurrentView()">🔄 Atualizar</button>
+            <button class="btn btn-green" onclick="ColaboradoresView.openCreateModal()">+ Novo Colaborador</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CORPO PRINCIPAL DA VIEW -->
+      <main class="content-body" id="main-content-view">
+        <div style="display:flex; justify-content:center; padding:50px;">
+          <div class="spinner">Carregando painel...</div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL GLOBAL -->
+  <div class="modal-backdrop" id="global-modal" onclick="if(event.target === this) App.closeModal()">
+    <div class="modal-content" id="global-modal-content"></div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container"></div>
+
+  <!-- JAVASCRIPT LIBRARIES & VIEWS -->
+  <script src="/js/api.js"></script>
+  <script src="/js/views/dashboardView.js"></script>
+  <script src="/js/views/organogramaView.js"></script>
+  <script src="/js/views/carometroView.js"></script>
+  <script src="/js/views/departamentosView.js"></script>
+  <script src="/js/views/colaboradoresView.js"></script>
+  <script src="/js/views/historicoView.js"></script>
+  <script src="/js/views/configuracoesView.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
