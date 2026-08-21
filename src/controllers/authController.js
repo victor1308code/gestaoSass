@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const db = require('../config/database');
+const { signToken } = require('../utils/token');
 
 function slugify(text) {
   return text
@@ -14,7 +15,7 @@ function slugify(text) {
 }
 
 const authController = {
-  // Login de Usuário (Admin, Gestor, Viewer ou SuperAdmin)
+  // Login de Usuário
   async login(req, res) {
     try {
       const { email, password } = req.body;
@@ -46,13 +47,19 @@ const authController = {
         return res.status(403).json({ error: 'Acesso da empresa suspenso. Entre em contato com o suporte.' });
       }
 
-      // Salva sessão
-      req.session.userId = user.id;
-      req.session.empresaId = user.empresa_id;
-      req.session.role = user.role;
+      // Gera token stateless JWT para funcionar 100% em Serverless (Vercel)
+      const token = signToken({ userId: user.id, role: user.role, empresaId: user.empresa_id });
+
+      // Salva sessão local se existir
+      if (req.session) {
+        req.session.userId = user.id;
+        req.session.empresaId = user.empresa_id;
+        req.session.role = user.role;
+      }
 
       return res.json({
         success: true,
+        token,
         user: {
           id: user.id,
           nome: user.nome,
@@ -68,7 +75,7 @@ const authController = {
     }
   },
 
-  // Cadastro de Nova Empresa (Self-Service Onboarding do SaaS)
+  // Cadastro de Nova Empresa
   async registerEmpresa(req, res) {
     try {
       const { nome_fantasia, razao_social, cnpj, email, senha, nome_responsavel, telefone } = req.body;
@@ -77,13 +84,11 @@ const authController = {
         return res.status(400).json({ error: 'Preencha todos os campos obrigatórios.' });
       }
 
-      // Verifica se o e-mail já existe
       const existingUser = db.prepare('SELECT id FROM usuarios WHERE LOWER(email) = LOWER(?)').get(email.trim());
       if (existingUser) {
         return res.status(409).json({ error: 'Este e-mail já está cadastrado no sistema.' });
       }
 
-      // Gera slug único para a empresa
       let baseSlug = slugify(nome_fantasia);
       let slug = baseSlug;
       let counter = 1;
@@ -91,12 +96,9 @@ const authController = {
         slug = `${baseSlug}-${counter++}`;
       }
 
-      // Plano Free padrão
       const freePlano = db.prepare("SELECT id FROM planos WHERE slug = 'free'").get() || { id: 1 };
-
       const senhaHash = await bcrypt.hash(senha, 10);
 
-      // Transação para criar empresa + departamento inicial + cargo padrão + usuário admin
       db.exec('BEGIN');
       try {
         const empresaResult = db.prepare(`
@@ -114,19 +116,16 @@ const authController = {
 
         const empresaId = empresaResult.lastInsertRowid;
 
-        // Cria departamento raiz
-        const deptResult = db.prepare(`
+        db.prepare(`
           INSERT INTO departamentos (empresa_id, nome, sigla, ramal, cor, ordem)
-          VALUES (?, 'Diretoria Geral', 'DIR', '100', '#2563eb', 1)
+          VALUES (?, 'Diretoria Geral', 'DIR', '100', '#4f46e5', 1)
         `).run(empresaId);
 
-        // Cria cargo padrão
         db.prepare(`
           INSERT INTO cargos (empresa_id, nome_cargo, nivel, descricao)
           VALUES (?, 'Diretor(a)', 'Diretoria', 'Direção Geral da Empresa')
         `).run(empresaId);
 
-        // Cria usuário Admin da empresa
         const userResult = db.prepare(`
           INSERT INTO usuarios (empresa_id, nome, email, senha_hash, role, status)
           VALUES (?, ?, ?, ?, 'admin', 'ativo')
@@ -134,13 +133,18 @@ const authController = {
 
         db.exec('COMMIT');
 
-        // Autentica o usuário imediatamente na sessão
-        req.session.userId = userResult.lastInsertRowid;
-        req.session.empresaId = empresaId;
-        req.session.role = 'admin';
+        const userId = userResult.lastInsertRowid;
+        const token = signToken({ userId, role: 'admin', empresaId });
+
+        if (req.session) {
+          req.session.userId = userId;
+          req.session.empresaId = empresaId;
+          req.session.role = 'admin';
+        }
 
         return res.status(201).json({
           success: true,
+          token,
           message: 'Empresa cadastrada com sucesso!',
           empresa: {
             id: empresaId,
@@ -148,7 +152,7 @@ const authController = {
             slug
           },
           user: {
-            id: userResult.lastInsertRowid,
+            id: userId,
             nome: nome_responsavel,
             email: email.trim(),
             role: 'admin'
@@ -164,7 +168,7 @@ const authController = {
     }
   },
 
-  // Retorna dados do usuário autenticado e status da empresa
+  // Retorna dados do usuário autenticado
   async me(req, res) {
     return res.json({
       user: req.user
@@ -173,13 +177,10 @@ const authController = {
 
   // Logout
   async logout(req, res) {
-    req.session.destroy(err => {
-      if (err) {
-        return res.status(500).json({ error: 'Erro ao encerrar sessão.' });
-      }
-      res.clearCookie('connect.sid');
-      return res.json({ success: true, message: 'Sessão encerrada com sucesso.' });
-    });
+    if (req.session) {
+      req.session.destroy();
+    }
+    return res.json({ success: true, message: 'Sessão encerrada com sucesso.' });
   },
 
   // Alterar Senha

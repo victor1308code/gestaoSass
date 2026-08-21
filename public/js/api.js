@@ -1,9 +1,15 @@
-// ── CLIENT API HELPER & UTILITIES (10/10 REFINED) ──
+// ── CLIENT API HELPER & UTILITIES (STATELESS JWT AUTH) ──
 const API = {
   async request(url, options = {}) {
+    const token = localStorage.getItem('gestao_token');
+
     const defaultHeaders = {
       'Content-Type': 'application/json'
     };
+
+    if (token) {
+      defaultHeaders['Authorization'] = `Bearer ${token}`;
+    }
 
     const config = {
       ...options,
@@ -20,10 +26,13 @@ const API = {
     try {
       const response = await fetch(url, config);
       
-      // Se não autorizado, redireciona para login
-      if (response.status === 401 && !window.location.pathname.includes('login.html')) {
-        window.location.href = '/login.html';
-        return null;
+      // Se não autorizado, limpa token e redireciona para login
+      if (response.status === 401) {
+        localStorage.removeItem('gestao_token');
+        if (!window.location.pathname.includes('login.html')) {
+          window.location.href = '/login.html';
+          return null;
+        }
       }
 
       if (response.status === 429) {
@@ -36,6 +45,11 @@ const API = {
         throw new Error(data.error || 'Ocorreu um erro na requisição.');
       }
 
+      // Se a resposta trouxe um novo token, salva no localStorage
+      if (data && data.token) {
+        localStorage.setItem('gestao_token', data.token);
+      }
+
       return data;
     } catch (err) {
       this.toast(err.message, 'error');
@@ -44,14 +58,25 @@ const API = {
   },
 
   // Auth
-  login(email, password) {
-    return this.request('/api/auth/login', { method: 'POST', body: { email, password } });
+  async login(email, password) {
+    const res = await this.request('/api/auth/login', { method: 'POST', body: { email, password } });
+    if (res && res.token) {
+      localStorage.setItem('gestao_token', res.token);
+    }
+    return res;
   },
-  register(formData) {
-    return this.request('/api/auth/register', { method: 'POST', body: formData });
+  async register(formData) {
+    const res = await this.request('/api/auth/register', { method: 'POST', body: formData });
+    if (res && res.token) {
+      localStorage.setItem('gestao_token', res.token);
+    }
+    return res;
   },
-  logout() {
-    return this.request('/api/auth/logout', { method: 'POST' });
+  async logout() {
+    try {
+      await this.request('/api/auth/logout', { method: 'POST' });
+    } catch (_) {}
+    localStorage.removeItem('gestao_token');
   },
   me() {
     return this.request('/api/auth/me');

@@ -1,7 +1,25 @@
 const db = require('../config/database');
+const { verifyToken } = require('../utils/token');
 
 function requireAuth(req, res, next) {
-  if (!req.session || !req.session.userId) {
+  let userId = null;
+
+  // 1. Tenta extrair token do Header Authorization: Bearer <token>
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+    if (decoded && decoded.userId) {
+      userId = decoded.userId;
+    }
+  }
+
+  // 2. Fallback para sessão se disponível
+  if (!userId && req.session && req.session.userId) {
+    userId = req.session.userId;
+  }
+
+  if (!userId) {
     return res.status(401).json({ error: 'Não autenticado. Por favor, realize o login.' });
   }
 
@@ -13,10 +31,10 @@ function requireAuth(req, res, next) {
     LEFT JOIN empresas e ON u.empresa_id = e.id
     LEFT JOIN planos p ON e.plano_id = p.id
     WHERE u.id = ?
-  `).get(req.session.userId);
+  `).get(userId);
 
   if (!user || user.status !== 'ativo') {
-    req.session.destroy();
+    if (req.session) req.session.destroy();
     return res.status(401).json({ error: 'Usuário inativo ou inexistente.' });
   }
 
