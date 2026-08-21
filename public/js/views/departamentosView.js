@@ -5,12 +5,17 @@ const DepartamentosView = {
   async render(container) {
     container.innerHTML = `
       <div class="card" style="margin-bottom: 24px;">
-        <div class="card-header">
+        <div class="card-header" style="flex-wrap:wrap; gap:12px;">
           <div>
-            <div class="card-title">Estrutura Organizacional & Departamentos</div>
+            <div class="card-title-with-icon">
+              <span>🏢</span> Estrutura Organizacional & Departamentos
+            </div>
             <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Gerencie a árvore de setores, chefias e ramais da sua empresa.</p>
           </div>
-          <button class="btn btn-primary" onclick="DepartamentosView.openCreateModal()">+ Novo Departamento</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-outline" onclick="App.navigate('organograma')">🌳 Ver Organograma</button>
+            <button class="btn btn-green" onclick="DepartamentosView.openCreateModal()">+ Novo Departamento</button>
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -43,6 +48,7 @@ const DepartamentosView = {
       this.departamentos = await API.getDepartamentos();
       this.colaboradores = await API.getColaboradores();
       const tbody = document.getElementById('departamentos-table-body');
+      if (!tbody) return;
 
       if (!this.departamentos || this.departamentos.length === 0) {
         tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">Nenhum departamento cadastrado.</td></tr>`;
@@ -54,24 +60,31 @@ const DepartamentosView = {
           <td><div style="width:16px; height:16px; border-radius:4px; background:${d.cor || '#3b82f6'};"></div></td>
           <td><strong>${d.nome}</strong></td>
           <td><span class="badge badge-default">${d.sigla || '—'}</span></td>
-          <td>${d.parent_nome || '<span style="color:var(--text-muted); font-size:11px;">(Raiz / Presidência)</span>'}</td>
+          <td>${d.parent_nome ? `<strong>${d.parent_nome}</strong>` : '<span style="color:var(--text-muted); font-size:11px;">(Raiz / Presidência)</span>'}</td>
           <td>${d.responsavel_nome || '<span style="color:var(--text-muted);">Não definido</span>'}</td>
           <td>${d.ramal || '—'}</td>
           <td><span class="badge badge-info">${d.total_colaboradores} membros</span></td>
           <td style="text-align:right; white-space:nowrap;">
-            <button class="btn btn-secondary btn-sm" onclick="DepartamentosView.openEditModal(${d.id})">Editar</button>
-            <button class="btn btn-danger btn-sm" onclick="DepartamentosView.delete(${d.id}, '${d.nome.replace(/'/g, "\\'")}')">Excluir</button>
+            <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="DepartamentosView.openCreateModal(${d.id})" title="Criar Subsetor">➕ Subsetor</button>
+            <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="DepartamentosView.openEditModal(${d.id})">✏️ Editar</button>
+            <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="DepartamentosView.delete(${d.id}, '${d.nome.replace(/'/g, "\\'")}')">🗑️</button>
           </td>
         </tr>
       `).join('');
     } catch (err) {
-      document.getElementById('departamentos-table-body').innerHTML = `
-        <tr><td colspan="8" style="text-align:center; color:var(--danger);">Erro: ${err.message}</td></tr>
-      `;
+      const tbody = document.getElementById('departamentos-table-body');
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--danger);">Erro: ${err.message}</td></tr>`;
+      }
     }
   },
 
-  openCreateModal(parentId = null) {
+  async openCreateModal(parentId = null) {
+    try {
+      this.departamentos = await API.getDepartamentos();
+      this.colaboradores = await API.getColaboradores();
+    } catch (_) {}
+
     const parentOpts = (this.departamentos || []).map(d => `
       <option value="${d.id}" ${parentId == d.id ? 'selected' : ''}>${d.nome} (${d.sigla || 'SET'})</option>
     `).join('');
@@ -83,7 +96,7 @@ const DepartamentosView = {
     App.openModal(`
       <div class="modal-header">
         <h3>+ Novo Departamento</h3>
-        <button class="btn-icon" onclick="App.closeModal()">✕</button>
+        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:16px;">✕</button>
       </div>
       <form id="create-dept-form" onsubmit="DepartamentosView.submitCreate(event)">
         <div class="modal-body">
@@ -121,13 +134,13 @@ const DepartamentosView = {
             </div>
             <div class="form-group">
               <label class="form-label">Cor de Destaque</label>
-              <input type="color" name="cor" class="form-control" value="#2563eb" style="height:42px; padding:4px;" />
+              <input type="color" name="cor" class="form-control" value="#4f46e5" style="height:42px; padding:4px;" />
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="App.closeModal()">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar Departamento</button>
+          <button type="button" class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-green">Salvar Departamento</button>
         </div>
       </form>
     `);
@@ -142,17 +155,28 @@ const DepartamentosView = {
       await API.createDepartamento(data);
       API.toast('Departamento criado com sucesso!', 'success');
       App.closeModal();
-      this.loadData();
+      
+      // Atualiza a view ativa
+      if (App.state.currentView === 'organograma') {
+        OrganogramaView.loadTree();
+      } else if (App.state.currentView === 'departamentos') {
+        this.loadData();
+      }
     } catch (err) {
       API.toast(err.message, 'error');
     }
   },
 
-  openEditModal(id) {
-    const dept = this.departamentos.find(d => d.id === id);
+  async openEditModal(id) {
+    try {
+      this.departamentos = await API.getDepartamentos();
+      this.colaboradores = await API.getColaboradores();
+    } catch (_) {}
+
+    const dept = (this.departamentos || []).find(d => d.id === id);
     if (!dept) return;
 
-    const parentOpts = this.departamentos.filter(d => d.id !== id).map(d => `
+    const parentOpts = (this.departamentos || []).filter(d => d.id !== id).map(d => `
       <option value="${d.id}" ${dept.parent_id == d.id ? 'selected' : ''}>${d.nome} (${d.sigla || 'SET'})</option>
     `).join('');
 
@@ -163,7 +187,7 @@ const DepartamentosView = {
     App.openModal(`
       <div class="modal-header">
         <h3>Editar Departamento</h3>
-        <button class="btn-icon" onclick="App.closeModal()">✕</button>
+        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:16px;">✕</button>
       </div>
       <form id="edit-dept-form" onsubmit="DepartamentosView.submitEdit(event, ${id})">
         <div class="modal-body">
@@ -186,7 +210,7 @@ const DepartamentosView = {
           <div class="form-group">
             <label class="form-label">Subordinado a</label>
             <select name="parent_id" class="form-control">
-              <option value="">Nenhum (Nível Principal)</option>
+              <option value="">Nenhum (Nível Principal / Raiz)</option>
               ${parentOpts}
             </select>
           </div>
@@ -201,13 +225,13 @@ const DepartamentosView = {
             </div>
             <div class="form-group">
               <label class="form-label">Cor de Destaque</label>
-              <input type="color" name="cor" class="form-control" value="${dept.cor || '#2563eb'}" style="height:42px; padding:4px;" />
+              <input type="color" name="cor" class="form-control" value="${dept.cor || '#4f46e5'}" style="height:42px; padding:4px;" />
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="App.closeModal()">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+          <button type="button" class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-green">Salvar Alterações</button>
         </div>
       </form>
     `);
@@ -222,7 +246,12 @@ const DepartamentosView = {
       await API.updateDepartamento(id, data);
       API.toast('Departamento atualizado com sucesso!', 'success');
       App.closeModal();
-      this.loadData();
+
+      if (App.state.currentView === 'organograma') {
+        OrganogramaView.loadTree();
+      } else if (App.state.currentView === 'departamentos') {
+        this.loadData();
+      }
     } catch (err) {
       API.toast(err.message, 'error');
     }
@@ -236,7 +265,12 @@ const DepartamentosView = {
     try {
       await API.deleteDepartamento(id);
       API.toast('Departamento excluído com sucesso.', 'success');
-      this.loadData();
+
+      if (App.state.currentView === 'organograma') {
+        OrganogramaView.loadTree();
+      } else if (App.state.currentView === 'departamentos') {
+        this.loadData();
+      }
     } catch (err) {
       API.toast(err.message, 'error');
     }

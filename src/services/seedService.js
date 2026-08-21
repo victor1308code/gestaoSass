@@ -23,8 +23,10 @@ function seedDatabase(db) {
     if (!superAdmin) {
       db.prepare(`
         INSERT INTO usuarios (empresa_id, nome, email, senha_hash, role, status)
-        VALUES (NULL, 'Super Administrador', 'admin@gestaosass.com', ?, 'superadmin', 'ativo')
+        VALUES (NULL, 'Victor (SuperAdmin)', 'admin@gestaosass.com', ?, 'superadmin', 'ativo')
       `).run(HASH_ADMIN123);
+    } else {
+      db.prepare("UPDATE usuarios SET nome = 'Victor (SuperAdmin)' WHERE role = 'superadmin'").run();
     }
 
     // 3. Seed Empresa InovaTech
@@ -46,10 +48,10 @@ function seedDatabase(db) {
 
       const empresaId = empresaResult.lastInsertRowid;
 
-      // Usuário Admin da Empresa
+      // Usuário Admin da Empresa -> Victor
       db.prepare(`
         INSERT INTO usuarios (empresa_id, nome, email, senha_hash, role, status)
-        VALUES (?, 'Carlos Henrique (Admin RH)', 'admin@inovatech.com', ?, 'admin', 'ativo')
+        VALUES (?, 'Victor', 'admin@inovatech.com', ?, 'admin', 'ativo')
       `).run(empresaId, HASH_SENHA123);
 
       // Departamentos
@@ -81,10 +83,13 @@ function seedDatabase(db) {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ativo', ?)
       `);
 
-      insertColab.run(empresaId, 'EMP-001', 'Mariana Alcantara', 'mariana@inovatech.com', '(11) 98123-4567', cCEO, ceoId, '2021-01-15', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&auto=format&fit=crop&q=80');
+      insertColab.run(empresaId, 'EMP-001', 'Victor', 'victor@inovatech.com', '(11) 98123-4567', cCEO, ceoId, '2021-01-15', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80');
       insertColab.run(empresaId, 'EMP-002', 'Rodrigo Mendes', 'rodrigo.mendes@inovatech.com', '(11) 98234-5678', cCTO, tiId, '2021-03-01', 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&auto=format&fit=crop&q=80');
       insertColab.run(empresaId, 'EMP-003', 'Carlos Henrique', 'carlos.rh@inovatech.com', '(11) 98345-6789', cHeadRH, rhId, '2021-04-10', 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&auto=format&fit=crop&q=80');
       insertColab.run(empresaId, 'EMP-006', 'Lucas Pinheiro', 'lucas.dev@inovatech.com', '(11) 98678-9012', cDevLead, devId, '2022-01-10', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&auto=format&fit=crop&q=80');
+    } else {
+      // Atualiza o nome para Victor no banco existente
+      db.prepare("UPDATE usuarios SET nome = 'Victor' WHERE role = 'admin' AND empresa_id IS NOT NULL").run();
     }
   } catch (err) {
     console.error('Erro ao executar seedDatabase:', err);

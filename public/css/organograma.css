@@ -183,6 +183,11 @@
   transform: translateX(-50%);
 }
 
+/* Nós Raiz não têm linha superior apontando para o vazio */
+#tree-root-container > div > .tree-node::before {
+  display: none !important;
+}
+
 .tree-children > .tree-node:first-child::after {
   content: '';
   position: absolute;

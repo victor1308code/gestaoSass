@@ -15,7 +15,7 @@ const OrganogramaView = {
           <button class="btn btn-outline" style="padding:6px 12px;" onclick="OrganogramaView.zoom(-0.1)" title="Diminuir Zoom">🔍 -</button>
           <span id="zoom-indicator" style="font-size:12px; font-weight:700; min-width:45px; text-align:center;">100%</span>
           <button class="btn btn-outline" style="padding:6px 12px;" onclick="OrganogramaView.zoom(0.1)" title="Aumentar Zoom">🔍 +</button>
-          <button class="btn btn-green" onclick="DepartamentosView.openCreateModal()">+ Novo Setor</button>
+          <button class="btn btn-green" onclick="DepartamentosView.openCreateModal()">+ Novo Setor Raiz</button>
         </div>
       </div>
 
@@ -40,6 +40,7 @@ const OrganogramaView = {
       const response = await API.getDepartamentosTree();
       this.treeData = response.tree;
       const rootContainer = document.getElementById('tree-root-container');
+      if (!rootContainer) return;
 
       if (!this.treeData || this.treeData.length === 0) {
         rootContainer.innerHTML = `
@@ -57,9 +58,10 @@ const OrganogramaView = {
         </div>
       `;
     } catch (err) {
-      document.getElementById('tree-root-container').innerHTML = `
-        <p style="color:var(--danger);">Erro ao carregar organograma: ${err.message}</p>
-      `;
+      const rootContainer = document.getElementById('tree-root-container');
+      if (rootContainer) {
+        rootContainer.innerHTML = `<p style="color:var(--danger);">Erro ao carregar organograma: ${err.message}</p>`;
+      }
     }
   },
 
@@ -90,6 +92,16 @@ const OrganogramaView = {
               ${node.ramal ? `📞 Ramal: ${node.ramal}` : 'Sem gestor definido'}
             </div>
           `}
+
+          <!-- AÇÕES RÁPIDAS NO CARD -->
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px dashed var(--border-color);" onclick="event.stopPropagation()">
+            <button class="btn btn-outline" style="padding:2px 8px; font-size:10px;" onclick="DepartamentosView.openCreateModal(${node.id})" title="Adicionar Subdepartamento">
+              ➕ Sub-Setor
+            </button>
+            <button class="btn btn-outline" style="padding:2px 8px; font-size:10px;" onclick="DepartamentosView.openEditModal(${node.id})">
+              ✏️ Editar
+            </button>
+          </div>
         </div>
 
         ${hasChildren ? `
