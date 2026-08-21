@@ -1,4 +1,4 @@
-// ── CENTRAL APPLICATION CONTROLLER (TALENTOS UI) ──
+// ── CENTRAL APPLICATION CONTROLLER (ENTERPRISE UI) ──
 const App = {
   state: {
     user: null,
@@ -47,18 +47,15 @@ const App = {
 
     // Header da Sidebar
     const companyName = document.getElementById('sidebar-company-name');
-    if (companyName) companyName.textContent = u.empresa?.nome || 'Talentos';
+    if (companyName) companyName.textContent = u.empresa?.nome || 'Gestão SaaS';
 
     // Perfil Topbar
     const topbarEmail = document.getElementById('topbar-user-email');
-    if (topbarEmail) topbarEmail.textContent = `${u.email} ▾`;
-
-    const topbarRole = document.getElementById('topbar-role-label');
-    if (topbarRole) topbarRole.textContent = `${u.role.toUpperCase()} ▾`;
+    if (topbarEmail) topbarEmail.textContent = u.email;
 
     const avatarCircle = document.getElementById('topbar-avatar-circle');
     const footerAvatar = document.getElementById('user-avatar-initials');
-    const initial = (u.nome || 'U')[0].toUpperCase();
+    const initial = (u.nome || 'V')[0].toUpperCase();
     if (avatarCircle) avatarCircle.textContent = initial;
     if (footerAvatar) footerAvatar.textContent = initial;
 
@@ -66,7 +63,7 @@ const App = {
     if (userName) userName.textContent = u.nome;
 
     const userRole = document.getElementById('user-display-role');
-    if (userRole) userRole.textContent = u.role;
+    if (userRole) userRole.textContent = u.role === 'admin' ? 'Administrador' : u.role;
   },
 
   navigate(viewName, updateHash = true) {
@@ -88,13 +85,13 @@ const App = {
 
     // Atualiza Títulos e Breadcrumbs
     const titles = {
-      dashboard: { title: 'Relatório de Gestão & Dashboard', desc: 'Relatório e indicadores em tempo real', breadcrumb: 'Dashboard' },
+      dashboard: { title: 'Relatório de Gestão & Indicadores', desc: 'Métricas consolidadas em tempo real', breadcrumb: 'Dashboard' },
       organograma: { title: 'Organograma da Estrutura', desc: 'Hierarquia e relações entre setores', breadcrumb: 'Organograma' },
-      carometro: { title: 'Carômetro & Galeria', desc: 'Diretório fotográfico do time', breadcrumb: 'Carômetro' },
-      departamentos: { title: 'Gestão de Departamentos & Cargos', desc: 'Estrutura dos setores e lideranças', breadcrumb: 'Departamentos' },
-      colaboradores: { title: 'Quadro de Colaboradores (Contratados)', desc: 'Gestão e movimentação de funcionários', breadcrumb: 'Colaboradores' },
-      historico: { title: 'Histórico & Auditoria de Movimentações', desc: 'Registro cronológico de alterações', breadcrumb: 'Auditoria' },
-      configuracoes: { title: 'Configurações do Sistema & Usuários', desc: 'Identidade visual e perfis de acesso', breadcrumb: 'Configurações' }
+      carometro: { title: 'Diretório Visual (Carômetro)', desc: 'Galeria de fotos e contatos da equipe', breadcrumb: 'Carômetro' },
+      departamentos: { title: 'Estrutura de Departamentos', desc: 'Gerenciamento de setores e lideranças', breadcrumb: 'Departamentos' },
+      colaboradores: { title: 'Quadro Geral de Colaboradores', desc: 'Gestão de pessoal, cargos e admissões', breadcrumb: 'Colaboradores' },
+      historico: { title: 'Histórico & Auditoria de Movimentações', desc: 'Registro auditável de transferências e alterações', breadcrumb: 'Auditoria' },
+      configuracoes: { title: 'Configurações do Sistema & Usuários', desc: 'Perfil da empresa e controle de acessos', breadcrumb: 'Configurações' }
     };
 
     const info = titles[viewName] || { title: 'Gestão SaaS', desc: '', breadcrumb: 'Painel' };
@@ -116,7 +113,12 @@ const App = {
 
   reloadCurrentView() {
     this.navigate(this.state.currentView, false);
-    API.toast('Dados atualizados com sucesso!', 'success');
+    API.toast('Dados atualizados.', 'success');
+  },
+
+  updateCompanyBranding(name, logo, color) {
+    const title = document.getElementById('sidebar-company-name');
+    if (title && name) title.textContent = name;
   },
 
   openModal(contentHtml) {
@@ -143,7 +145,6 @@ const App = {
   }
 };
 
-// Auto inicialização ao carregar a página
 document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('main-content-view')) {
     App.init();

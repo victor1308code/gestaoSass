@@ -8,25 +8,25 @@ const ColaboradoresView = {
 
   async render(container) {
     container.innerHTML = `
-      <div class="card" style="margin-bottom:24px;">
+      <div class="card" style="margin-bottom:20px;">
         <div class="card-header" style="flex-wrap:wrap; gap:12px;">
           <div>
             <div class="card-title-with-icon">
-              <span>👥</span> Quadro Geral de Colaboradores
+              ${Icons.users} Quadro Geral de Colaboradores
             </div>
-            <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Gerencie o time, alocações de departamento e admissões da sua organização.</p>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Gerenciamento de funcionários, alocações e registros cadastrais.</p>
           </div>
 
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <a href="/api/colaboradores/export/csv" class="btn btn-outline" target="_blank">📥 Exportar CSV</a>
-            <button class="btn btn-outline" onclick="ColaboradoresView.openImportModal()">📤 Importar Planilha</button>
+            <a href="/api/colaboradores/export/csv" class="btn btn-outline" target="_blank">${Icons.download} Exportar CSV</a>
+            <button class="btn btn-outline" onclick="ColaboradoresView.openImportModal()">${Icons.upload} Importar CSV</button>
             <button class="btn btn-green" onclick="ColaboradoresView.openCreateModal()">+ Novo Colaborador</button>
           </div>
         </div>
 
         <!-- FILTROS -->
-        <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
-          <input type="text" id="colab-table-search" class="form-control" placeholder="Buscar por nome, matrícula, cargo..." style="flex:1; min-width:220px;" />
+        <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+          <input type="text" id="colab-table-search" class="form-control" placeholder="Buscar por nome, matrícula, cargo..." style="flex:1; min-width:200px;" />
           <select id="colab-table-dept" class="form-control" style="width:200px;">
             <option value="">Todos os Departamentos</option>
           </select>
@@ -50,20 +50,20 @@ const ColaboradoresView = {
               ${[1,2,3,4,5].map(() => `
                 <tr>
                   <td>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                      <div class="skeleton skeleton-avatar" style="width:34px; height:34px;"></div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <div class="skeleton skeleton-avatar" style="width:28px; height:28px;"></div>
                       <div style="flex:1;">
-                        <div class="skeleton skeleton-text" style="width:120px; height:12px;"></div>
-                        <div class="skeleton skeleton-text" style="width:80px; height:10px;"></div>
+                        <div class="skeleton skeleton-text" style="width:100px; height:10px;"></div>
+                        <div class="skeleton skeleton-text" style="width:70px; height:8px;"></div>
                       </div>
                     </div>
                   </td>
-                  <td><div class="skeleton skeleton-text" style="width:60px;"></div></td>
-                  <td><div class="skeleton skeleton-text" style="width:100px;"></div></td>
-                  <td><div class="skeleton skeleton-text" style="width:90px;"></div></td>
-                  <td><div class="skeleton skeleton-text" style="width:70px;"></div></td>
                   <td><div class="skeleton skeleton-text" style="width:50px;"></div></td>
-                  <td style="text-align:right;"><div class="skeleton skeleton-text" style="width:60px; margin-left:auto;"></div></td>
+                  <td><div class="skeleton skeleton-text" style="width:90px;"></div></td>
+                  <td><div class="skeleton skeleton-text" style="width:80px;"></div></td>
+                  <td><div class="skeleton skeleton-text" style="width:60px;"></div></td>
+                  <td><div class="skeleton skeleton-text" style="width:40px;"></div></td>
+                  <td style="text-align:right;"><div class="skeleton skeleton-text" style="width:50px; margin-left:auto;"></div></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -127,7 +127,6 @@ const ColaboradoresView = {
       return matchSearch && matchDept;
     });
 
-    // Paginação
     const totalItems = filtered.length;
     const totalPages = Math.ceil(totalItems / this.pageSize) || 1;
     if (this.currentPage > totalPages) this.currentPage = totalPages;
@@ -139,7 +138,7 @@ const ColaboradoresView = {
     if (!tbody) return;
 
     if (paginated.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">Nenhum colaborador encontrado.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">Nenhum colaborador encontrado.</td></tr>`;
       document.getElementById('colab-pagination').innerHTML = '';
       return;
     }
@@ -151,37 +150,36 @@ const ColaboradoresView = {
       return `
         <tr>
           <td>
-            <div style="display:flex; align-items:center; gap:10px;">
-              <img src="${photo}" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid var(--border-color);" />
+            <div style="display:flex; align-items:center; gap:8px;">
+              <img src="${photo}" style="width:28px; height:28px; border-radius:3px; object-fit:cover; border:1px solid var(--border-color);" />
               <div>
-                <div style="font-weight:700; color:var(--text-main);">${c.nome}</div>
+                <div style="font-weight:600; color:var(--text-main);">${c.nome}</div>
                 <div style="font-size:11px; color:var(--text-muted);">${c.email || 'Sem e-mail'}</div>
               </div>
             </div>
           </td>
-          <td><code>${c.matricula || '—'}</code></td>
+          <td><code style="font-size:11px; color:var(--text-muted);">${c.matricula || '—'}</code></td>
           <td>${c.departamento_nome ? `<span class="badge badge-default">${c.departamento_nome}</span>` : '<span style="color:var(--text-muted);">Sem setor</span>'}</td>
           <td><strong>${c.nome_cargo || '—'}</strong></td>
           <td>${c.data_admissao ? new Date(c.data_admissao).toLocaleDateString('pt-BR') : '—'}</td>
           <td><span class="badge ${statusBadge}">${c.status || 'Ativo'}</span></td>
           <td style="text-align:right; white-space:nowrap;">
-            <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="ColaboradoresView.openMoverModal(${c.id}, '${c.nome.replace(/'/g, "\\'")}', ${c.departamento_id || 'null'})" title="Mover Setor">🔀 Mover</button>
-            <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="ColaboradoresView.openEditModal(${c.id})" title="Editar">✏️ Editar</button>
-            <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="ColaboradoresView.delete(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" title="Excluir">🗑️</button>
+            <button class="btn btn-outline" style="padding:2px 6px; font-size:11px;" onclick="ColaboradoresView.openMoverModal(${c.id}, '${c.nome.replace(/'/g, "\\'")}', ${c.departamento_id || 'null'})" title="Transferir Setor">Transferir</button>
+            <button class="btn btn-outline" style="padding:2px 6px; font-size:11px;" onclick="ColaboradoresView.openEditModal(${c.id})" title="Editar">Editar</button>
+            <button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="ColaboradoresView.delete(${c.id}, '${c.nome.replace(/'/g, "\\'")}')" title="Excluir">Excluir</button>
           </td>
         </tr>
       `;
     }).join('');
 
-    // Renderiza controles de paginação
     const pagContainer = document.getElementById('colab-pagination');
     if (pagContainer) {
       pagContainer.innerHTML = `
         <div>Mostrando <strong>${totalItems > 0 ? startIdx + 1 : 0}</strong> - <strong>${Math.min(startIdx + this.pageSize, totalItems)}</strong> de <strong>${totalItems}</strong> colaboradores</div>
         <div class="pagination-controls">
-          <button class="page-btn" onclick="ColaboradoresView.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>‹ Anterior</button>
-          <span style="font-weight:700; margin:0 6px;">Página ${this.currentPage} de ${totalPages}</span>
-          <button class="page-btn" onclick="ColaboradoresView.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>Próxima ›</button>
+          <button class="page-btn" onclick="ColaboradoresView.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>Anterior</button>
+          <span style="font-weight:600; margin:0 6px;">${this.currentPage} / ${totalPages}</span>
+          <button class="page-btn" onclick="ColaboradoresView.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>Próxima</button>
         </div>
       `;
     }
@@ -209,19 +207,18 @@ const ColaboradoresView = {
 
     App.openModal(`
       <div class="modal-header">
-        <h3>+ Novo Colaborador</h3>
-        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:16px;">✕</button>
+        <h3>Novo Colaborador</h3>
+        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:14px;">✕</button>
       </div>
       <form id="create-colab-form" onsubmit="ColaboradoresView.submitCreate(event)">
         <div class="modal-body">
-          <!-- UPLOAD DE FOTO DIRETO -->
           <div class="avatar-upload-box" id="avatar-drop-zone">
             <img id="avatar-preview-display" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Novo" class="avatar-preview-img" alt="Foto" />
             <div class="avatar-upload-info">
-              <div style="font-size:13px; font-weight:700; color:var(--text-main);">Foto do Colaborador</div>
-              <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">Selecione uma foto JPG ou PNG do seu dispositivo.</div>
+              <div style="font-size:12px; font-weight:600; color:var(--text-main);">Foto do Colaborador</div>
+              <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">JPG ou PNG com boa resolução.</div>
               <label class="avatar-upload-btn">
-                📁 Escolher Imagem
+                Selecionar Imagem
                 <input type="file" id="colab-file-input" accept="image/*" style="display:none;" onchange="ColaboradoresView.handlePhotoUpload(event)" />
               </label>
             </div>
@@ -230,7 +227,7 @@ const ColaboradoresView = {
           <div class="form-row">
             <div class="form-group" style="grid-column: span 2;">
               <label class="form-label">Nome Completo *</label>
-              <input type="text" name="nome" class="form-control" placeholder="Ex: Maria Silva Oliveira" required />
+              <input type="text" name="nome" class="form-control" placeholder="Ex: Maria Silva" required />
             </div>
           </div>
 
@@ -247,7 +244,7 @@ const ColaboradoresView = {
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Telefone / WhatsApp</label>
+              <label class="form-label">Telefone / Contato</label>
               <input type="text" name="telefone" id="input-colab-phone" class="form-control" placeholder="(11) 99999-9999" oninput="this.value = API.maskPhone(this.value)" />
             </div>
             <div class="form-group">
@@ -275,14 +272,14 @@ const ColaboradoresView = {
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Líder Imediato (Gestor)</label>
+              <label class="form-label">Gestor Imediato</label>
               <select name="gestor_id" class="form-control">
-                <option value="">Nenhum (Reporta à Diretoria)</option>
+                <option value="">Nenhum (Diretoria)</option>
                 ${gestorOpts}
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Status Funcional</label>
+              <label class="form-label">Status</label>
               <select name="status" class="form-control">
                 <option value="ativo">Ativo</option>
                 <option value="ferias">Férias</option>
@@ -293,7 +290,7 @@ const ColaboradoresView = {
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
-          <button type="submit" class="btn btn-green">Salvar Colaborador</button>
+          <button type="submit" class="btn btn-green">Salvar</button>
         </div>
       </form>
     `);
@@ -322,7 +319,7 @@ const ColaboradoresView = {
 
     try {
       await API.createColaborador(data);
-      API.toast('Colaborador cadastrado com sucesso!', 'success');
+      API.toast('Colaborador cadastrado com sucesso.', 'success');
       App.closeModal();
       this.loadData();
     } catch (err) {
@@ -350,18 +347,17 @@ const ColaboradoresView = {
       App.openModal(`
         <div class="modal-header">
           <h3>Editar Colaborador</h3>
-          <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:16px;">✕</button>
+          <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:14px;">✕</button>
         </div>
         <form id="edit-colab-form" onsubmit="ColaboradoresView.submitEdit(event, ${id})">
           <div class="modal-body">
-            <!-- UPLOAD DE FOTO -->
             <div class="avatar-upload-box">
               <img id="avatar-preview-display" src="${c.foto || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(c.nome)}" class="avatar-preview-img" alt="Foto" />
               <div class="avatar-upload-info">
-                <div style="font-size:13px; font-weight:700; color:var(--text-main);">Alterar Foto</div>
-                <div style="font-size:11px; color:var(--text-muted); margin-bottom:6px;">Envie uma foto em alta qualidade.</div>
+                <div style="font-size:12px; font-weight:600; color:var(--text-main);">Alterar Foto</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">Selecione uma imagem atualizada.</div>
                 <label class="avatar-upload-btn">
-                  📁 Selecionar Nova Foto
+                  Selecionar Foto
                   <input type="file" id="colab-file-input" accept="image/*" style="display:none;" onchange="ColaboradoresView.handlePhotoUpload(event)" />
                 </label>
               </div>
@@ -415,14 +411,14 @@ const ColaboradoresView = {
 
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Líder Imediato</label>
+                <label class="form-label">Gestor Imediato</label>
                 <select name="gestor_id" class="form-control">
                   <option value="">Nenhum (Diretoria)</option>
                   ${gestorOpts}
                 </select>
               </div>
               <div class="form-group">
-                <label class="form-label">Status Funcional</label>
+                <label class="form-label">Status</label>
                 <select name="status" class="form-control">
                   <option value="ativo" ${c.status === 'ativo' ? 'selected' : ''}>Ativo</option>
                   <option value="ferias" ${c.status === 'ferias' ? 'selected' : ''}>Férias</option>
@@ -453,7 +449,7 @@ const ColaboradoresView = {
 
     try {
       await API.updateColaborador(id, data);
-      API.toast('Colaborador atualizado com sucesso!', 'success');
+      API.toast('Colaborador atualizado com sucesso.', 'success');
       App.closeModal();
       this.loadData();
     } catch (err) {
@@ -468,16 +464,16 @@ const ColaboradoresView = {
 
     App.openModal(`
       <div class="modal-header">
-        <h3>🔀 Transferir Setor: ${nome}</h3>
-        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:16px;">✕</button>
+        <h3>Transferir Setor: ${nome}</h3>
+        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:14px;">✕</button>
       </div>
       <form onsubmit="ColaboradoresView.submitMover(event, ${id})">
         <div class="modal-body">
-          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
-            Selecione o novo departamento. A transferência será registrada automaticamente na auditoria.
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">
+            Selecione o departamento de destino. A alteração será registrada automaticamente no histórico.
           </p>
           <div class="form-group">
-            <label class="form-label">Novo Departamento de Destino *</label>
+            <label class="form-label">Departamento de Destino *</label>
             <select name="departamento_id" class="form-control" required>
               <option value="">Selecione o departamento</option>
               ${deptOpts}
@@ -499,7 +495,7 @@ const ColaboradoresView = {
 
     try {
       await API.moverColaborador(id, deptId);
-      API.toast('Colaborador transferido com sucesso!', 'success');
+      API.toast('Colaborador transferido com sucesso.', 'success');
       App.closeModal();
       this.loadData();
     } catch (err) {
@@ -514,7 +510,7 @@ const ColaboradoresView = {
 
     try {
       await API.deleteColaborador(id);
-      API.toast('Colaborador removido com sucesso.', 'success');
+      API.toast('Colaborador removido.', 'success');
       this.loadData();
     } catch (err) {
       API.toast(err.message, 'error');
@@ -524,18 +520,18 @@ const ColaboradoresView = {
   openImportModal() {
     App.openModal(`
       <div class="modal-header">
-        <h3>📤 Importação em Massa de Colaboradores</h3>
-        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:16px;">✕</button>
+        <h3>Importação de Colaboradores (CSV)</h3>
+        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:14px;">✕</button>
       </div>
       <div class="modal-body">
-        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
-          Cole os dados da sua planilha no formato CSV (separado por vírgula ou ponto-e-vírgula):
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">
+          Cole os dados da planilha no formato CSV (separado por vírgula ou ponto-e-vírgula):
         </p>
         <textarea id="import-csv-text" class="form-control" rows="8" placeholder="Nome, Email, Departamento, Cargo, Matrícula&#10;Ana Paula, ana@empresa.com, Tecnologia, Desenvolvedora, EMP-101&#10;Lucas Santos, lucas@empresa.com, Vendas, Executivo de Contas, EMP-102"></textarea>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
-        <button type="button" class="btn btn-green" onclick="ColaboradoresView.processCsvImport()">Importar Dados</button>
+        <button type="button" class="btn btn-green" onclick="ColaboradoresView.processCsvImport()">Importar</button>
       </div>
     `);
   },

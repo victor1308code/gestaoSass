@@ -4,12 +4,12 @@ const ConfiguracoesView = {
 
   async render(container) {
     container.innerHTML = `
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:18px;">
         <!-- DADOS DA EMPRESA & IDENTIDADE VISUAL -->
         <div class="card">
           <div class="card-header">
             <div class="card-title-with-icon">
-              <span>🏢</span> Perfil da Empresa
+              ${Icons.building} Perfil da Empresa
             </div>
           </div>
           <form id="empresa-config-form" onsubmit="ConfiguracoesView.saveEmpresa(event)">
@@ -46,11 +46,11 @@ const ConfiguracoesView = {
               </div>
               <div class="form-group">
                 <label class="form-label">Cor Primária da Marca</label>
-                <input type="color" id="cfg-cor" name="cor_primaria" class="form-control" style="height:42px; padding:4px;" />
+                <input type="color" id="cfg-cor" name="cor_primaria" class="form-control" style="height:36px; padding:2px;" />
               </div>
             </div>
 
-            <button type="submit" class="btn btn-green" style="width:100%; margin-top:8px;">Salvar Dados da Empresa</button>
+            <button type="submit" class="btn btn-green" style="width:100%; margin-top:4px;">Salvar Dados da Empresa</button>
           </form>
         </div>
 
@@ -58,9 +58,9 @@ const ConfiguracoesView = {
         <div class="card">
           <div class="card-header">
             <div class="card-title-with-icon">
-              <span>👥</span> Usuários & Acessos
+              ${Icons.user} Usuários & Permissões
             </div>
-            <button class="btn btn-green btn-sm" style="padding:4px 10px; font-size:11px;" onclick="ConfiguracoesView.openAddUserModal()">+ Convidar</button>
+            <button class="btn btn-green btn-sm" style="padding:2px 8px; font-size:11px;" onclick="ConfiguracoesView.openAddUserModal()">+ Convidar</button>
           </div>
           <div class="table-responsive">
             <table class="data-table">
@@ -83,10 +83,10 @@ const ConfiguracoesView = {
         <div class="card" style="grid-column: 1 / -1;">
           <div class="card-header">
             <div class="card-title-with-icon">
-              <span>🔐</span> Segurança & Senha
+              ${Icons.settings} Segurança & Alteração de Senha
             </div>
           </div>
-          <form id="change-pass-form" onsubmit="ConfiguracoesView.changePassword(event)" style="max-width:400px;">
+          <form id="change-pass-form" onsubmit="ConfiguracoesView.changePassword(event)" style="max-width:380px;">
             <div class="form-group">
               <label class="form-label">Senha Atual *</label>
               <input type="password" name="senhaAtual" class="form-control" required />
@@ -115,7 +115,7 @@ const ConfiguracoesView = {
       document.getElementById('cfg-telefone').value = this.empresa.telefone_contato || '';
       document.getElementById('cfg-email').value = this.empresa.email_contato || '';
       document.getElementById('cfg-logo').value = this.empresa.logo_url || '';
-      document.getElementById('cfg-cor').value = this.empresa.cor_primaria || '#4f46e5';
+      document.getElementById('cfg-cor').value = this.empresa.cor_primaria || '#2563eb';
 
       // Usuários
       this.users = await API.listUsers();
@@ -128,8 +128,8 @@ const ConfiguracoesView = {
             <td><span class="badge ${u.role === 'admin' ? 'badge-primary' : 'badge-default'}">${u.role}</span></td>
             <td style="text-align:right;">
               ${u.id !== App.state.user.id ? `
-                <button class="btn btn-danger btn-sm" style="padding:4px 8px; font-size:11px;" onclick="ConfiguracoesView.deleteUser(${u.id})">Remover</button>
-              ` : '<span style="font-size:11px; color:var(--text-muted); font-weight:600;">(Você)</span>'}
+                <button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="ConfiguracoesView.deleteUser(${u.id})">Remover</button>
+              ` : '<span style="font-size:11px; color:var(--text-muted);">(Você)</span>'}
             </td>
           </tr>
         `).join('');
@@ -146,7 +146,7 @@ const ConfiguracoesView = {
 
     try {
       await API.updateEmpresa(data);
-      API.toast('Empresa atualizada com sucesso!', 'success');
+      API.toast('Empresa atualizada.', 'success');
       App.updateCompanyBranding(data.nome_fantasia, data.logo_url, data.cor_primaria);
     } catch (err) {
       API.toast(err.message, 'error');
@@ -156,8 +156,8 @@ const ConfiguracoesView = {
   openAddUserModal() {
     App.openModal(`
       <div class="modal-header">
-        <h3>+ Adicionar Usuário</h3>
-        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:16px;">✕</button>
+        <h3>Adicionar Usuário</h3>
+        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:14px;">✕</button>
       </div>
       <form onsubmit="ConfiguracoesView.submitAddUser(event)">
         <div class="modal-body">
@@ -197,7 +197,7 @@ const ConfiguracoesView = {
 
     try {
       await API.createUser(data);
-      API.toast('Usuário criado com sucesso!', 'success');
+      API.toast('Usuário criado com sucesso.', 'success');
       App.closeModal();
       this.loadData();
     } catch (err) {
@@ -209,7 +209,7 @@ const ConfiguracoesView = {
     if (!confirm('Deseja realmente remover este usuário da empresa?')) return;
     try {
       await API.deleteUser(id);
-      API.toast('Usuário removido com sucesso.', 'success');
+      API.toast('Usuário removido.', 'success');
       this.loadData();
     } catch (err) {
       API.toast(err.message, 'error');
@@ -224,7 +224,7 @@ const ConfiguracoesView = {
 
     try {
       await API.changePassword(senhaAtual, novaSenha);
-      API.toast('Senha alterada com sucesso!', 'success');
+      API.toast('Senha alterada com sucesso.', 'success');
       e.target.reset();
     } catch (err) {
       API.toast(err.message, 'error');

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gestão SaaS — Plataforma de Gestão dos Times & Organograma</title>
+  <title>Gestão SaaS — Autenticação Corporativa</title>
   <link rel="stylesheet" href="/css/main.css" />
   <style>
     body {
@@ -11,30 +11,28 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      background: radial-gradient(circle at 50% 10%, rgba(79, 70, 229, 0.06) 0%, var(--bg-body) 70%);
+      background-color: #f8fafc;
       padding: 20px;
     }
     .auth-container {
       width: 100%;
-      max-width: 440px;
-      background: var(--bg-surface);
+      max-width: 400px;
+      background: #ffffff;
       border: 1px solid var(--border-color);
-      border-radius: var(--radius-xl);
-      box-shadow: var(--shadow-modal);
-      padding: 36px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 30px;
     }
     .auth-header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
     .auth-logo-badge {
-      width: 44px;
-      height: 44px;
-      border-radius: var(--radius-md);
-      background: var(--brand-accent-green);
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: var(--brand-primary);
       color: white;
-      font-size: 22px;
-      font-weight: 800;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -43,16 +41,16 @@
     .auth-tabs {
       display: flex;
       border-bottom: 1px solid var(--border-color);
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
     .auth-tab-btn {
       flex: 1;
       text-align: center;
-      padding: 10px;
+      padding: 8px;
       background: none;
       border: none;
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 12px;
+      font-weight: 600;
       color: var(--text-muted);
       cursor: pointer;
       border-bottom: 2px solid transparent;
@@ -67,40 +65,44 @@
 
   <div class="auth-container">
     <div class="auth-header">
-      <div class="auth-logo-badge">🏢</div>
-      <h1 style="font-size: 22px; font-weight: 800; color: var(--text-main); letter-spacing:-0.02em;">Gestão SaaS</h1>
-      <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Plataforma de Gestão dos Times & Organograma</p>
+      <div class="auth-logo-badge">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/><path d="M3 9h18"/><path d="M3 15h18"/>
+        </svg>
+      </div>
+      <h1 style="font-size: 18px; font-weight: 700; color: var(--text-main); letter-spacing:-0.01em;">Gestão SaaS</h1>
+      <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Plataforma de Gestão Organizacional e Pessoas</p>
     </div>
 
     <!-- TABS LOGIN vs CADASTRO -->
     <div class="auth-tabs">
-      <button class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">Entrar na Plataforma</button>
+      <button class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">Acessar Conta</button>
       <button class="auth-tab-btn" id="tab-btn-register" onclick="switchAuthTab('register')">Cadastrar Empresa</button>
     </div>
 
     <!-- FORMULÁRIO DE LOGIN -->
     <form id="form-login" onsubmit="handleLogin(event)">
       <div class="form-group">
-        <label class="form-label">E-mail de Acesso</label>
-        <input type="email" id="login-email" class="form-control" placeholder="admin@empresa.com.br" required />
+        <label class="form-label">E-mail Corporativo</label>
+        <input type="email" id="login-email" class="form-control" placeholder="usuario@empresa.com.br" required />
       </div>
 
       <div class="form-group">
-        <label class="form-label">Senha</label>
+        <label class="form-label">Senha de Acesso</label>
         <input type="password" id="login-password" class="form-control" placeholder="••••••••" required />
       </div>
 
-      <button type="submit" id="login-submit-btn" class="btn btn-green" style="width: 100%; padding: 11px; margin-top: 10px;">Entrar no Painel</button>
+      <button type="submit" id="login-submit-btn" class="btn btn-primary" style="width: 100%; padding: 8px; margin-top: 8px;">Entrar</button>
 
       <!-- ACESSO DEMO -->
-      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-color); text-align: center;">
-        <span style="font-size: 10px; color: var(--text-muted); font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;">Acesso Rápido para Demonstração:</span>
-        <div style="display: flex; gap: 8px; margin-top: 10px;">
+      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border-color); text-align: center;">
+        <span style="font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Acesso de Demonstração:</span>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
           <button type="button" class="btn btn-outline" style="flex: 1; font-size: 11px;" onclick="fillDemo('admin@inovatech.com', 'senha123')">
-            🏢 InovaTech Demo
+            InovaTech Demo
           </button>
           <button type="button" class="btn btn-outline" style="flex: 1; font-size: 11px;" onclick="fillDemo('admin@gestaosass.com', 'admin123')">
-            👑 SuperAdmin
+            SuperAdmin
           </button>
         </div>
       </div>
@@ -114,13 +116,13 @@
       </div>
 
       <div class="form-group">
-        <label class="form-label">Nome do Responsável / Administrador *</label>
-        <input type="text" id="reg-responsavel" class="form-control" placeholder="Ex: João da Silva" required />
+        <label class="form-label">Nome do Responsável *</label>
+        <input type="text" id="reg-responsavel" class="form-control" placeholder="Ex: João Silva" required />
       </div>
 
       <div class="form-group">
         <label class="form-label">E-mail Profissional *</label>
-        <input type="email" id="reg-email" class="form-control" placeholder="joao@minhaempresa.com" required />
+        <input type="email" id="reg-email" class="form-control" placeholder="joao@empresa.com" required />
       </div>
 
       <div class="form-group">
@@ -128,7 +130,7 @@
         <input type="password" id="reg-senha" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6" required />
       </div>
 
-      <button type="submit" id="reg-submit-btn" class="btn btn-green" style="width: 100%; padding: 11px; margin-top: 10px;">Criar Conta & Começar</button>
+      <button type="submit" id="reg-submit-btn" class="btn btn-primary" style="width: 100%; padding: 8px; margin-top: 8px;">Cadastrar e Começar</button>
     </form>
   </div>
 
@@ -160,13 +162,13 @@
 
       try {
         const res = await API.login(email, password);
-        API.toast('Login realizado com sucesso! Redirecionando...', 'success');
+        API.toast('Autenticado com sucesso.', 'success');
         setTimeout(() => {
           window.location.href = '/index.html';
-        }, 300);
+        }, 200);
       } catch (err) {
         btn.disabled = false;
-        btn.textContent = 'Entrar no Painel';
+        btn.textContent = 'Entrar';
       }
     }
 
@@ -174,7 +176,7 @@
       e.preventDefault();
       const btn = document.getElementById('reg-submit-btn');
       btn.disabled = true;
-      btn.textContent = 'Criando conta...';
+      btn.textContent = 'Cadastrando...';
 
       const data = {
         nome_fantasia: document.getElementById('reg-empresa').value,
@@ -185,13 +187,13 @@
 
       try {
         const res = await API.register(data);
-        API.toast('Empresa criada com sucesso! Entrando...', 'success');
+        API.toast('Empresa cadastrada.', 'success');
         setTimeout(() => {
           window.location.href = '/index.html';
-        }, 300);
+        }, 200);
       } catch (err) {
         btn.disabled = false;
-        btn.textContent = 'Criar Conta & Começar';
+        btn.textContent = 'Cadastrar e Começar';
       }
     }
   </script>

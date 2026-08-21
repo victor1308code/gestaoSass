@@ -4,16 +4,16 @@ const DepartamentosView = {
 
   async render(container) {
     container.innerHTML = `
-      <div class="card" style="margin-bottom: 24px;">
+      <div class="card" style="margin-bottom: 20px;">
         <div class="card-header" style="flex-wrap:wrap; gap:12px;">
           <div>
             <div class="card-title-with-icon">
-              <span>🏢</span> Estrutura Organizacional & Departamentos
+              ${Icons.building} Estrutura Organizacional & Departamentos
             </div>
-            <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Gerencie a árvore de setores, chefias e ramais da sua empresa.</p>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Gerenciamento da estrutura de setores, lideranças e ramais da empresa.</p>
           </div>
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-outline" onclick="App.navigate('organograma')">🌳 Ver Organograma</button>
+            <button class="btn btn-outline" onclick="App.navigate('organograma')">${Icons.tree} Ver Organograma</button>
             <button class="btn btn-green" onclick="DepartamentosView.openCreateModal()">+ Novo Departamento</button>
           </div>
         </div>
@@ -25,10 +25,10 @@ const DepartamentosView = {
                 <th>Cor</th>
                 <th>Nome do Departamento</th>
                 <th>Sigla</th>
-                <th>Setor Superior (Pai)</th>
+                <th>Setor Superior</th>
                 <th>Responsável / Líder</th>
                 <th>Ramal</th>
-                <th>Colaboradores</th>
+                <th>Membros</th>
                 <th style="text-align:right;">Ações</th>
               </tr>
             </thead>
@@ -51,23 +51,23 @@ const DepartamentosView = {
       if (!tbody) return;
 
       if (!this.departamentos || this.departamentos.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">Nenhum departamento cadastrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:24px; color:var(--text-muted);">Nenhum departamento cadastrado.</td></tr>`;
         return;
       }
 
       tbody.innerHTML = this.departamentos.map(d => `
         <tr>
-          <td><div style="width:16px; height:16px; border-radius:4px; background:${d.cor || '#3b82f6'};"></div></td>
+          <td><div style="width:12px; height:12px; border-radius:2px; background:${d.cor || 'var(--brand-primary)'};"></div></td>
           <td><strong>${d.nome}</strong></td>
           <td><span class="badge badge-default">${d.sigla || '—'}</span></td>
-          <td>${d.parent_nome ? `<strong>${d.parent_nome}</strong>` : '<span style="color:var(--text-muted); font-size:11px;">(Raiz / Presidência)</span>'}</td>
+          <td>${d.parent_nome ? `<strong>${d.parent_nome}</strong>` : '<span style="color:var(--text-muted); font-size:11px;">(Nível Raiz)</span>'}</td>
           <td>${d.responsavel_nome || '<span style="color:var(--text-muted);">Não definido</span>'}</td>
           <td>${d.ramal || '—'}</td>
           <td><span class="badge badge-info">${d.total_colaboradores} membros</span></td>
           <td style="text-align:right; white-space:nowrap;">
-            <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="DepartamentosView.openCreateModal(${d.id})" title="Criar Subsetor">➕ Subsetor</button>
-            <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="DepartamentosView.openEditModal(${d.id})">✏️ Editar</button>
-            <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="DepartamentosView.delete(${d.id}, '${d.nome.replace(/'/g, "\\'")}')">🗑️</button>
+            <button class="btn btn-outline" style="padding:2px 6px; font-size:11px;" onclick="DepartamentosView.openCreateModal(${d.id})" title="Adicionar Subsetor">+ Subsetor</button>
+            <button class="btn btn-outline" style="padding:2px 6px; font-size:11px;" onclick="DepartamentosView.openEditModal(${d.id})">Editar</button>
+            <button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="DepartamentosView.delete(${d.id}, '${d.nome.replace(/'/g, "\\'")}')">Excluir</button>
           </td>
         </tr>
       `).join('');
@@ -95,8 +95,8 @@ const DepartamentosView = {
 
     App.openModal(`
       <div class="modal-header">
-        <h3>+ Novo Departamento</h3>
-        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:16px;">✕</button>
+        <h3>Novo Departamento</h3>
+        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:14px;">✕</button>
       </div>
       <form id="create-dept-form" onsubmit="DepartamentosView.submitCreate(event)">
         <div class="modal-body">
@@ -111,15 +111,15 @@ const DepartamentosView = {
               <input type="text" name="sigla" class="form-control" placeholder="Ex: DITEC" />
             </div>
             <div class="form-group">
-              <label class="form-label">Ramal / Contato</label>
-              <input type="text" name="ramal" class="form-control" placeholder="Ex: 200 / 201" />
+              <label class="form-label">Ramal</label>
+              <input type="text" name="ramal" class="form-control" placeholder="Ex: 200" />
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Subordinado a (Setor Superior)</label>
+            <label class="form-label">Setor Superior (Subordinação)</label>
             <select name="parent_id" class="form-control">
-              <option value="">Nenhum (Nível Principal / Raiz)</option>
+              <option value="">Nenhum (Nível Raiz / Diretoria)</option>
               ${parentOpts}
             </select>
           </div>
@@ -133,14 +133,14 @@ const DepartamentosView = {
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Cor de Destaque</label>
-              <input type="color" name="cor" class="form-control" value="#4f46e5" style="height:42px; padding:4px;" />
+              <label class="form-label">Cor de Identificação</label>
+              <input type="color" name="cor" class="form-control" value="#2563eb" style="height:36px; padding:2px;" />
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
-          <button type="submit" class="btn btn-green">Salvar Departamento</button>
+          <button type="submit" class="btn btn-green">Salvar</button>
         </div>
       </form>
     `);
@@ -153,10 +153,9 @@ const DepartamentosView = {
 
     try {
       await API.createDepartamento(data);
-      API.toast('Departamento criado com sucesso!', 'success');
+      API.toast('Departamento criado com sucesso.', 'success');
       App.closeModal();
       
-      // Atualiza a view ativa
       if (App.state.currentView === 'organograma') {
         OrganogramaView.loadTree();
       } else if (App.state.currentView === 'departamentos') {
@@ -187,7 +186,7 @@ const DepartamentosView = {
     App.openModal(`
       <div class="modal-header">
         <h3>Editar Departamento</h3>
-        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:16px;">✕</button>
+        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:14px;">✕</button>
       </div>
       <form id="edit-dept-form" onsubmit="DepartamentosView.submitEdit(event, ${id})">
         <div class="modal-body">
@@ -208,9 +207,9 @@ const DepartamentosView = {
           </div>
 
           <div class="form-group">
-            <label class="form-label">Subordinado a</label>
+            <label class="form-label">Setor Superior</label>
             <select name="parent_id" class="form-control">
-              <option value="">Nenhum (Nível Principal / Raiz)</option>
+              <option value="">Nenhum (Nível Raiz)</option>
               ${parentOpts}
             </select>
           </div>
@@ -224,8 +223,8 @@ const DepartamentosView = {
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Cor de Destaque</label>
-              <input type="color" name="cor" class="form-control" value="${dept.cor || '#4f46e5'}" style="height:42px; padding:4px;" />
+              <label class="form-label">Cor de Identificação</label>
+              <input type="color" name="cor" class="form-control" value="${dept.cor || '#2563eb'}" style="height:36px; padding:2px;" />
             </div>
           </div>
         </div>
@@ -244,7 +243,7 @@ const DepartamentosView = {
 
     try {
       await API.updateDepartamento(id, data);
-      API.toast('Departamento atualizado com sucesso!', 'success');
+      API.toast('Departamento atualizado.', 'success');
       App.closeModal();
 
       if (App.state.currentView === 'organograma') {
@@ -258,13 +257,13 @@ const DepartamentosView = {
   },
 
   async delete(id, nome) {
-    if (!confirm(`Deseja realmente excluir o departamento "${nome}"? Os colaboradores ficarão sem departamento.`)) {
+    if (!confirm(`Deseja realmente excluir o departamento "${nome}"?`)) {
       return;
     }
 
     try {
       await API.deleteDepartamento(id);
-      API.toast('Departamento excluído com sucesso.', 'success');
+      API.toast('Departamento excluído.', 'success');
 
       if (App.state.currentView === 'organograma') {
         OrganogramaView.loadTree();
