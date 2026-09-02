@@ -61,6 +61,13 @@
           <span>Carômetro</span>
         </a>
 
+        <!-- CONTROLE DE ACESSO & CATRACAS (CONTROL ID) -->
+        <div class="nav-section-title">Acesso Físico & IoT</div>
+        <a class="nav-link" data-view="dispositivos" onclick="App.navigate('dispositivos')">
+          <span class="nav-icon" id="icon-nav-dispositivos"></span>
+          <span>Dispositivos & Catracas</span>
+        </a>
+
         <!-- AUDITORIA & HISTÓRICO -->
         <div class="nav-section-title">Auditoria & Logs</div>
         <a class="nav-link" data-view="historico" onclick="App.navigate('historico')">
@@ -155,6 +162,7 @@
   <script src="/js/views/carometroView.js"></script>
   <script src="/js/views/departamentosView.js"></script>
   <script src="/js/views/colaboradoresView.js"></script>
+  <script src="/js/views/dispositivosView.js"></script>
   <script src="/js/views/historicoView.js"></script>
   <script src="/js/views/configuracoesView.js"></script>
   <script src="/js/app.js"></script>
@@ -170,6 +178,7 @@
         setIcon('icon-nav-usuarios', Icons.user);
         setIcon('icon-nav-organograma', Icons.tree);
         setIcon('icon-nav-carometro', Icons.image);
+        setIcon('icon-nav-dispositivos', Icons.device);
         setIcon('icon-nav-historico', Icons.history);
         setIcon('icon-nav-configuracoes', Icons.settings);
         setIcon('header-clock-icon', Icons.clock);

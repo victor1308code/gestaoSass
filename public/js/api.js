@@ -169,6 +169,29 @@ const API = {
     return this.request(`/api/historico?${params.toString()}`);
   },
 
+  // Dispositivos Control iD (Acesso & Catracas)
+  getDispositivos() {
+    return this.request('/api/dispositivos');
+  },
+  createDispositivo(data) {
+    return this.request('/api/dispositivos', { method: 'POST', body: data });
+  },
+  updateDispositivo(id, data) {
+    return this.request(`/api/dispositivos/${id}`, { method: 'PUT', body: data });
+  },
+  deleteDispositivo(id) {
+    return this.request(`/api/dispositivos/${id}`, { method: 'DELETE' });
+  },
+  syncDispositivo(id) {
+    return this.request(`/api/dispositivos/${id}/sincronizar`, { method: 'POST' });
+  },
+  remoteUnlockDispositivo(id) {
+    return this.request(`/api/dispositivos/${id}/abrir`, { method: 'POST' });
+  },
+  getDispositivosLogs() {
+    return this.request('/api/dispositivos/logs');
+  },
+
   // ── MÁSCARAS DE ENTRADA ──
   maskCPF(value) {
     return value

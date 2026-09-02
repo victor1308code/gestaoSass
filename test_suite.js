@@ -125,11 +125,60 @@ async function runTests() {
     });
     logTest('8.1 POST /api/colaboradores/import (Batch CSV)', importRes.ok && importRes.data.count === 2, `Importados: ${importRes.data?.count}`);
 
-    // ── 9. TESTE DASHBOARD METRICS ──
-    const dashRes = await api('/api/dashboard', { headers: authHeaders });
-    logTest('9.1 GET /api/dashboard (KPIs e Distribuição)', dashRes.ok && dashRes.data.kpis?.totalColaboradores > 0, `Total Colabs: ${dashRes.data?.kpis?.totalColaboradores}`);
+    // ── 9. TESTE DISPOSITIVOS CONTROL ID (HARDWARE & IOT) ──
+    const listDevRes = await api('/api/dispositivos', { headers: authHeaders });
+    logTest('9.1 GET /api/dispositivos (Listagem)', listDevRes.ok && Array.isArray(listDevRes.data), `Dispositivos: ${listDevRes.data?.length}`);
 
-    // ── 10. TESTE ISOLAMENTO MULTI-TENANT ──
+    const createDevRes = await api('/api/dispositivos', {
+      method: 'POST',
+      headers: authHeaders,
+      body: {
+        nome: 'iDFace Teste Automatizado',
+        modelo: 'iDFace',
+        ip: '192.168.1.150',
+        porta: 80,
+        identificador_uuid: 'IDFACE-AUTO-TEST-99',
+        localizacao: 'Laboratório de Testes'
+      }
+    });
+    logTest('9.2 POST /api/dispositivos (Novo Terminal)', createDevRes.ok, `UUID: ${createDevRes.data?.uuid}`);
+    const testDevId = createDevRes.data.id;
+
+    // ── 10. TESTE SINCRONIZAÇÃO BIOMÉTRICA (FOTOS/FACES) ──
+    const syncRes = await api(`/api/dispositivos/${testDevId}/sincronizar`, {
+      method: 'POST',
+      headers: authHeaders
+    });
+    logTest('10.1 POST /api/dispositivos/:id/sincronizar', syncRes.ok && syncRes.data.sincronizados > 0, `Colabs Sincronizados: ${syncRes.data?.sincronizados}`);
+
+    // ── 11. TESTE ABERTURA REMOTA (PULSO DE CATRACA) ──
+    const unlockRes = await api(`/api/dispositivos/${testDevId}/abrir`, {
+      method: 'POST',
+      headers: authHeaders
+    });
+    logTest('11.1 POST /api/dispositivos/:id/abrir', unlockRes.ok, `Resposta: ${unlockRes.data?.message}`);
+
+    // ── 12. TESTE PROTOCOLO PUSH WEBHOOK CONTROL ID ──
+    const pushRes = await api('/api/controlid/push', {
+      method: 'POST',
+      body: {
+        device_uuid: 'IDFACE-AUTO-TEST-99',
+        event: 'face_identified',
+        registration: 'EMP-999'
+      }
+    });
+    logTest('12.1 POST /api/controlid/push (Webhook Push)', pushRes.ok && pushRes.data.result?.allow === 1, `Liberação: ${pushRes.data?.result?.message}`);
+
+    // ── 13. TESTE LOGS DE ACESSO FÍSICO ──
+    const logsRes = await api('/api/dispositivos/logs', { headers: authHeaders });
+    const hasPushLog = logsRes.data.some(l => l.colaborador_nome === 'Juliana Paes Ferreira');
+    logTest('13.1 GET /api/dispositivos/logs (Feed de Acessos)', hasPushLog, `Logs capturados: ${logsRes.data?.length}`);
+
+    // ── 14. TESTE DASHBOARD METRICS ──
+    const dashRes = await api('/api/dashboard', { headers: authHeaders });
+    logTest('14.1 GET /api/dashboard (KPIs e Distribuição)', dashRes.ok && dashRes.data.kpis?.totalColaboradores > 0, `Total Colabs: ${dashRes.data?.kpis?.totalColaboradores}`);
+
+    // ── 15. TESTE ISOLAMENTO MULTI-TENANT ──
     const registerOtherRes = await api('/api/auth/register', {
       method: 'POST',
       body: {
@@ -142,11 +191,11 @@ async function runTests() {
     });
     const betaToken = registerOtherRes.data.token;
     const betaColabs = await api('/api/colaboradores', { headers: { Authorization: `Bearer ${betaToken}` } });
-    logTest('10.1 Isolamento Multi-Tenant Estrito', betaColabs.data.length === 0, `Colabs da Empresa Beta: ${betaColabs.data?.length} (InovaTech isolada)`);
+    logTest('15.1 Isolamento Multi-Tenant Estrito', betaColabs.data.length === 0, `Colabs da Empresa Beta: ${betaColabs.data?.length} (InovaTech isolada)`);
 
-    // ── 11. TESTE SEGURANÇA & ACESSO NEGADO (SEM TOKEN) ──
+    // ── 16. TESTE SEGURANÇA & ACESSO NEGADO (SEM TOKEN) ──
     const unauthRes = await api('/api/colaboradores');
-    logTest('11.1 Bloqueio de Acesso Não Autenticado', unauthRes.status === 401, `Status: ${unauthRes.status}`);
+    logTest('16.1 Bloqueio de Acesso Não Autenticado', unauthRes.status === 401, `Status: ${unauthRes.status}`);
 
     console.log('\n=========================================');
     console.log(`📊 TOTAL DE TESTES: ${results.length}`);

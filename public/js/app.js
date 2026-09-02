@@ -11,6 +11,7 @@ const App = {
     carometro: CarometroView,
     departamentos: DepartamentosView,
     colaboradores: ColaboradoresView,
+    dispositivos: DispositivosView,
     historico: HistoricoView,
     configuracoes: ConfiguracoesView
   },
@@ -90,6 +91,7 @@ const App = {
       carometro: { title: 'Diretório Visual (Carômetro)', desc: 'Galeria de fotos e contatos da equipe', breadcrumb: 'Carômetro' },
       departamentos: { title: 'Estrutura de Departamentos', desc: 'Gerenciamento de setores e lideranças', breadcrumb: 'Departamentos' },
       colaboradores: { title: 'Quadro Geral de Colaboradores', desc: 'Gestão de pessoal, cargos e admissões', breadcrumb: 'Colaboradores' },
+      dispositivos: { title: 'Dispositivos & Catracas Control iD', desc: 'Monitoramento de hardware e acessos físicos', breadcrumb: 'Acesso Físico' },
       historico: { title: 'Histórico & Auditoria de Movimentações', desc: 'Registro auditável de transferências e alterações', breadcrumb: 'Auditoria' },
       configuracoes: { title: 'Configurações do Sistema & Usuários', desc: 'Perfil da empresa e controle de acessos', breadcrumb: 'Configurações' }
     };

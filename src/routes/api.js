@@ -13,10 +13,11 @@ const cargoController = require('../controllers/cargoController');
 const colaboradorController = require('../controllers/colaboradorController');
 const dashboardController = require('../controllers/dashboardController');
 const historicoController = require('../controllers/historicoController');
+const controlIdController = require('../controllers/controlIdController');
 
 // Rate limiters específicos
-const authLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 15, message: 'Muitas tentativas de autenticação. Aguarde 10 minutos.' });
-const registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: 'Muitas criações de empresas. Aguarde antes de tentar novamente.' });
+const authLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 25, message: 'Muitas tentativas de autenticação. Aguarde 10 minutos.' });
+const registerLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 15, message: 'Muitas criações de empresas. Aguarde antes de tentar novamente.' });
 
 // ── 1. AUTENTICAÇÃO & CADASTRO ──────────────────────────────────────────────
 router.post('/auth/login', authLimiter, authController.login);
@@ -56,7 +57,19 @@ router.put('/colaboradores/:id/foto', requireAuth, requireTenant, requireRole('a
 router.delete('/colaboradores/:id', requireAuth, requireTenant, requireRole('admin'), colaboradorController.delete);
 router.post('/colaboradores/import', requireAuth, requireTenant, requireRole('admin'), colaboradorController.importBatch);
 
-// ── 6. DASHBOARD & HISTÓRICO ──────────────────────────────────────────────
+// ── 6. DISPOSITIVOS & ACESSO CONTROL ID ──────────────────────────────────
+router.get('/dispositivos', requireAuth, requireTenant, controlIdController.list);
+router.post('/dispositivos', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.create);
+router.put('/dispositivos/:id', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.update);
+router.delete('/dispositivos/:id', requireAuth, requireTenant, requireRole('admin'), controlIdController.delete);
+router.post('/dispositivos/:id/sincronizar', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.syncEmployees);
+router.post('/dispositivos/:id/abrir', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.remoteUnlock);
+router.get('/dispositivos/logs', requireAuth, requireTenant, controlIdController.listLogs);
+
+// Webhook Push dos equipamentos Control iD
+router.post('/controlid/push', controlIdController.handlePush);
+
+// ── 7. DASHBOARD & HISTÓRICO ──────────────────────────────────────────────
 router.get('/dashboard', requireAuth, requireTenant, dashboardController.getMetrics);
 router.get('/historico', requireAuth, requireTenant, historicoController.list);
 

@@ -10,7 +10,7 @@ const dbPath = process.env.VERCEL
 
 const db = new DatabaseSync(dbPath);
 
-// Configurações de concorrência e timeout para NUNCA dar "database is locked"
+// Configurações de concorrência e timeout para evitar bloqueios
 db.exec(`
   PRAGMA busy_timeout = 5000;
   PRAGMA foreign_keys = ON;
@@ -37,7 +37,7 @@ db.exec(`
     email_contato TEXT,
     telefone_contato TEXT,
     logo_url TEXT,
-    cor_primaria TEXT DEFAULT '#4f46e5',
+    cor_primaria TEXT DEFAULT '#2563eb',
     plano_id INTEGER NOT NULL DEFAULT 1,
     status TEXT NOT NULL DEFAULT 'ativo',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -67,7 +67,7 @@ db.exec(`
     ramal TEXT,
     responsavel_id INTEGER,
     ordem INTEGER DEFAULT 0,
-    cor TEXT DEFAULT '#4f46e5',
+    cor TEXT DEFAULT '#2563eb',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (empresa_id) REFERENCES empresas (id) ON DELETE CASCADE,
     FOREIGN KEY (parent_id) REFERENCES departamentos (id) ON DELETE SET NULL
@@ -143,17 +143,64 @@ db.exec(`
     FOREIGN KEY (empresa_id) REFERENCES empresas (id) ON DELETE CASCADE
   );
 
-  -- 9. ÍNDICES
+  -- 9. DISPOSITIVOS CONTROL ID (TERMINAIS & CATRACAS)
+  CREATE TABLE IF NOT EXISTS dispositivos_controlid (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    empresa_id INTEGER NOT NULL,
+    nome TEXT NOT NULL,
+    modelo TEXT NOT NULL DEFAULT 'iDFace',
+    ip TEXT,
+    porta INTEGER DEFAULT 80,
+    identificador_uuid TEXT,
+    chave_api TEXT,
+    localizacao TEXT,
+    status TEXT NOT NULL DEFAULT 'online',
+    ultima_comunicacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (empresa_id) REFERENCES empresas (id) ON DELETE CASCADE
+  );
+
+  -- 10. REGRAS DE ACESSO POR DEPARTAMENTO
+  CREATE TABLE IF NOT EXISTS regras_acesso_dispositivo (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    empresa_id INTEGER NOT NULL,
+    dispositivo_id INTEGER NOT NULL,
+    departamento_id INTEGER NOT NULL,
+    horario_inicio TEXT DEFAULT '00:00',
+    horario_fim TEXT DEFAULT '23:59',
+    dias_semana TEXT DEFAULT '1,2,3,4,5',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (empresa_id) REFERENCES empresas (id) ON DELETE CASCADE,
+    FOREIGN KEY (dispositivo_id) REFERENCES dispositivos_controlid (id) ON DELETE CASCADE,
+    FOREIGN KEY (departamento_id) REFERENCES departamentos (id) ON DELETE CASCADE
+  );
+
+  -- 11. LOGS DE ACESSO EM TEMPO REAL (CONTROL ID)
+  CREATE TABLE IF NOT EXISTS logs_acesso_controlid (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    empresa_id INTEGER NOT NULL,
+    dispositivo_id INTEGER,
+    dispositivo_nome TEXT,
+    colaborador_id INTEGER,
+    colaborador_nome TEXT,
+    tipo_autenticacao TEXT DEFAULT 'facial',
+    status_acesso TEXT NOT NULL DEFAULT 'liberado',
+    foto_registro TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (empresa_id) REFERENCES empresas (id) ON DELETE CASCADE
+  );
+
+  -- 12. ÍNDICES
   CREATE INDEX IF NOT EXISTS idx_usuarios_empresa ON usuarios (empresa_id);
   CREATE INDEX IF NOT EXISTS idx_departamentos_empresa ON departamentos (empresa_id);
   CREATE INDEX IF NOT EXISTS idx_cargos_empresa ON cargos (empresa_id);
   CREATE INDEX IF NOT EXISTS idx_colaboradores_empresa ON colaboradores (empresa_id);
   CREATE INDEX IF NOT EXISTS idx_colaboradores_dept ON colaboradores (departamento_id);
-  CREATE INDEX IF NOT EXISTS idx_crachas_empresa ON crachas_dados (empresa_id);
-  CREATE INDEX IF NOT EXISTS idx_historico_empresa ON historico_movimentacoes (empresa_id);
+  CREATE INDEX IF NOT EXISTS idx_dispositivos_empresa ON dispositivos_controlid (empresa_id);
+  CREATE INDEX IF NOT EXISTS idx_logs_acesso_empresa ON logs_acesso_controlid (empresa_id);
 `);
 
-// Garante que o banco seja populado com os dados demo
+// Popula o banco com os dados iniciais
 seedDatabase(db);
 
 module.exports = db;
