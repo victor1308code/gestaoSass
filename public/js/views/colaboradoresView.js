@@ -17,13 +17,80 @@ const ColaboradoresView = {
             <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Gerenciamento de funcionários, alocações e registros cadastrais.</p>
           </div>
 
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <button class="btn btn-primary" style="background:#0284c7; border-color:#0284c7;" onclick="ColaboradoresView.openPullCloudModal()">☁️ Puxar do Control iD Nuvem</button>
-            <a href="/api/controlid/export-csv" class="btn btn-outline" target="_blank" title="Download do CSV formatado com 76 colunas para Control iD">${Icons.download} CSV Control iD</a>
-            <a href="/api/colaboradores/export/csv" class="btn btn-outline" target="_blank">${Icons.download} Exportar CSV</a>
-            <button class="btn btn-outline" onclick="ColaboradoresView.openImportModal()">${Icons.upload} Importar CSV</button>
-            <button class="btn btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="ColaboradoresView.resetTestData()" title="Limpar todos os dados e começar do zero">🗑️ Zerar Teste</button>
-            <button class="btn btn-green" onclick="ColaboradoresView.openCreateModal()">+ Novo Colaborador</button>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button class="btn btn-green" onclick="ColaboradoresView.openCreateModal()" style="font-weight:600; padding:7px 16px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Novo Colaborador
+            </button>
+
+            <div class="actions-dropdown-container">
+              <button type="button" class="btn-more-options" id="btn-colab-actions" onclick="ColaboradoresView.toggleActionsMenu(event)" title="Mais opções (Importar, Exportar, Integrações)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="5" cy="12" r="2"/>
+                  <circle cx="12" cy="12" r="2"/>
+                  <circle cx="19" cy="12" r="2"/>
+                </svg>
+              </button>
+
+              <div class="actions-popover-menu" id="colab-actions-popover">
+                <div class="popover-arrow"></div>
+                
+                <div class="popover-group-title">IMPORTAR / EXPORTAR</div>
+                
+                <button type="button" class="popover-item" onclick="ColaboradoresView.exportJson(); ColaboradoresView.closeActionsMenu();">
+                  <span class="popover-item-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="10 12 8 14 10 16"/><polyline points="14 12 16 14 14 16"/></svg>
+                  </span>
+                  <span>Exportar JSON</span>
+                </button>
+
+                <a href="/api/colaboradores/export/csv" class="popover-item" target="_blank" onclick="ColaboradoresView.closeActionsMenu()">
+                  <span class="popover-item-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="18"/><line x1="15" y1="15" x2="12" y2="18"/></svg>
+                  </span>
+                  <span>Exportar CSV (Geral)</span>
+                </a>
+
+                <a href="/api/controlid/export-csv" class="popover-item" target="_blank" onclick="ColaboradoresView.closeActionsMenu()">
+                  <span class="popover-item-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                  </span>
+                  <span>Exportar Modelo Control iD (76 col)</span>
+                </a>
+
+                <button type="button" class="popover-item" onclick="ColaboradoresView.openImportModal(); ColaboradoresView.closeActionsMenu();">
+                  <span class="popover-item-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></svg>
+                  </span>
+                  <span>Importar CSV</span>
+                </button>
+
+                <button type="button" class="popover-item" onclick="ColaboradoresView.openPullCloudModal(); ColaboradoresView.closeActionsMenu();">
+                  <span class="popover-item-icon" style="color:#0284c7;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><polyline points="12 13 12 18 15 15"/></svg>
+                  </span>
+                  <span>Puxar do Control iD Nuvem</span>
+                </button>
+
+                <div class="popover-divider"></div>
+
+                <div class="popover-group-title">AÇÕES DO SISTEMA</div>
+
+                <button type="button" class="popover-item" onclick="ColaboradoresView.loadData(); ColaboradoresView.closeActionsMenu();">
+                  <span class="popover-item-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                  </span>
+                  <span>Atualizar Lista</span>
+                </button>
+
+                <button type="button" class="popover-item popover-item-danger" onclick="ColaboradoresView.resetTestData(); ColaboradoresView.closeActionsMenu();">
+                  <span class="popover-item-icon" style="color:var(--danger, #ef4444);">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </span>
+                  <span>Zerar Dados de Teste</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -691,6 +758,66 @@ const ColaboradoresView = {
         fb.innerHTML = `❌ ${err.message || 'Erro ao comunicar com a API do RHiD Cloud.'}`;
       }
       API.toast(err.message, 'error');
+    }
+  },
+
+  toggleActionsMenu(e) {
+    if (e) e.stopPropagation();
+    const popover = document.getElementById('colab-actions-popover');
+    if (!popover) return;
+    const isShown = popover.classList.contains('show');
+    if (isShown) {
+      this.closeActionsMenu();
+    } else {
+      popover.classList.add('show');
+      const closeHandler = (evt) => {
+        if (!popover.contains(evt.target) && evt.target.id !== 'btn-colab-actions' && !evt.target.closest('#btn-colab-actions')) {
+          this.closeActionsMenu();
+          document.removeEventListener('click', closeHandler);
+        }
+      };
+      setTimeout(() => {
+        document.addEventListener('click', closeHandler);
+      }, 10);
+    }
+  },
+
+  closeActionsMenu() {
+    const popover = document.getElementById('colab-actions-popover');
+    if (popover) {
+      popover.classList.remove('show');
+    }
+  },
+
+  exportJson() {
+    try {
+      const data = this.colaboradores || [];
+      const jsonStr = JSON.stringify(data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `colaboradores_${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      API.toast('Arquivo JSON exportado com sucesso.', 'success');
+    } catch (err) {
+      API.toast('Erro ao exportar JSON: ' + err.message, 'error');
+    }
+  },
+
+  async resetTestData() {
+    if (!confirm('Deseja realmente ZERAR todos os dados e começar do zero? Esta ação é irreversível.')) {
+      return;
+    }
+    try {
+      await API.resetTestData();
+      API.toast('Dados de teste zerados com sucesso.', 'success');
+      this.loadData();
+    } catch (err) {
+      API.toast(err.message || 'Erro ao zerar dados.', 'error');
     }
   }
 };

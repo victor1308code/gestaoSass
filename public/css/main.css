@@ -534,6 +534,146 @@ body {
   text-decoration: underline;
 }
 
+/* ── DROPDOWN / POPOVER DE AÇÕES (ESTILO CONTROL ID / MENU FLUTUANTE) ── */
+.actions-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.btn-more-options {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-more-options:hover {
+  background-color: #f1f5f9;
+  color: var(--brand-primary);
+  border-color: #cbd5e1;
+}
+
+.btn-more-options:active {
+  background-color: #e2e8f0;
+}
+
+.actions-popover-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 260px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.12), 0 6px 12px -3px rgba(0, 0, 0, 0.06);
+  z-index: 1000;
+  padding: 8px 0;
+  animation: popoverFadeIn 0.15s ease-out;
+}
+
+.actions-popover-menu.show {
+  display: block;
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.popover-arrow {
+  position: absolute;
+  top: -6px;
+  right: 11px;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  border-top: 1px solid #e2e8f0;
+  transform: rotate(45deg);
+  z-index: 1001;
+}
+
+.popover-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 8px 16px 4px 16px;
+  user-select: none;
+}
+
+.popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  background: transparent;
+  border: none;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.popover-item:hover {
+  background-color: #f8fafc;
+  color: var(--brand-primary);
+}
+
+.popover-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: color 0.12s ease;
+}
+
+.popover-item:hover .popover-item-icon {
+  color: var(--brand-primary);
+}
+
+.popover-divider {
+  height: 1px;
+  background-color: #f1f5f9;
+  margin: 6px 0;
+  border: none;
+}
+
+.popover-item-danger {
+  color: #dc2626;
+}
+
+.popover-item-danger:hover {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+.popover-item-danger:hover .popover-item-icon {
+  color: #dc2626;
+}
+
 /* KPI STAT BOXES (CLEAN ENTERPRISE) */
 .kpi-grid-4 {
   display: grid;
