@@ -146,7 +146,17 @@ const ConfiguracoesView = {
 
     try {
       await API.updateEmpresa(data);
-      API.toast('Empresa atualizada.', 'success');
+      API.toast('Empresa atualizada com sucesso.', 'success');
+      if (App.state.user) {
+        if (!App.state.user.empresa) App.state.user.empresa = {};
+        Object.assign(App.state.user.empresa, {
+          nome: data.nome_fantasia || App.state.user.empresa.nome,
+          nome_fantasia: data.nome_fantasia,
+          razao_social: data.razao_social,
+          logo_url: data.logo_url,
+          cor_primaria: data.cor_primaria
+        });
+      }
       App.updateCompanyBranding(data.nome_fantasia, data.logo_url, data.cor_primaria);
     } catch (err) {
       API.toast(err.message, 'error');

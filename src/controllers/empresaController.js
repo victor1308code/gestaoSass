@@ -147,47 +147,121 @@ const empresaController = {
   // Re-hidrata dados a partir do cache do cliente (resiliência para Serverless na Vercel)
   async rehydrate(req, res) {
     try {
-      const { colaboradores, departamentos, cargos } = req.body;
+      const { colaboradores, departamentos, cargos, empresa } = req.body;
 
       db.exec('BEGIN');
       try {
+        // 0. Atualiza dados da empresa se fornecidos pelo cache do cliente
+        if (empresa && (empresa.nome_fantasia || empresa.razao_social)) {
+          db.prepare(`
+            UPDATE empresas
+            SET nome_fantasia = COALESCE(?, nome_fantasia),
+                razao_social = COALESCE(?, razao_social),
+                cnpj = COALESCE(?, cnpj),
+                email_contato = COALESCE(?, email_contato),
+                telefone_contato = COALESCE(?, telefone_contato),
+                logo_url = COALESCE(?, logo_url),
+                cor_primaria = COALESCE(?, cor_primaria)
+            WHERE id = ?
+          `).run(
+            empresa.nome_fantasia || null,
+            empresa.razao_social || null,
+            empresa.cnpj || null,
+            empresa.email_contato || null,
+            empresa.telefone_contato || null,
+            empresa.logo_url || null,
+            empresa.cor_primaria || null,
+            req.empresaId
+          );
+        }
+
+        // 1. Departamentos - Pass 1: Inserção e Mapeamento de IDs
         const deptMap = {};
+        const deptOldIdMap = {};
         if (Array.isArray(departamentos)) {
           for (const d of departamentos) {
             if (!d || !d.nome || !String(d.nome).trim()) continue;
             const nomeTrim = String(d.nome).trim();
             const existing = db.prepare('SELECT id FROM departamentos WHERE empresa_id = ? AND LOWER(nome) = LOWER(?)').get(req.empresaId, nomeTrim);
+            let dId;
             if (!existing) {
               const r = db.prepare(`
                 INSERT INTO departamentos (empresa_id, nome, sigla, ramal, cor, ordem)
                 VALUES (?, ?, ?, ?, ?, ?)
               `).run(req.empresaId, nomeTrim, d.sigla || null, d.ramal || null, d.cor || '#2563eb', d.ordem || 1);
-              deptMap[nomeTrim.toLowerCase()] = r.lastInsertRowid;
+              dId = r.lastInsertRowid;
             } else {
-              deptMap[nomeTrim.toLowerCase()] = existing.id;
+              dId = existing.id;
+              db.prepare(`
+                UPDATE departamentos
+                SET sigla = COALESCE(?, sigla),
+                    ramal = COALESCE(?, ramal),
+                    cor = COALESCE(?, cor),
+                    ordem = COALESCE(?, ordem)
+                WHERE id = ? AND empresa_id = ?
+              `).run(d.sigla || null, d.ramal || null, d.cor || null, d.ordem || null, dId, req.empresaId);
             }
+            deptMap[nomeTrim.toLowerCase()] = dId;
+            if (d.id) deptOldIdMap[d.id] = dId;
           }
         }
 
+        // 2. Cargos - Pass 1: Inserção e Mapeamento de IDs
         const cargoMap = {};
+        const cargoOldIdMap = {};
         if (Array.isArray(cargos)) {
           for (const cg of cargos) {
             const cargoNome = cg.nome_cargo || cg.nome;
             if (!cg || !cargoNome || !String(cargoNome).trim()) continue;
             const cargoTrim = String(cargoNome).trim();
             const existing = db.prepare('SELECT id FROM cargos WHERE empresa_id = ? AND LOWER(nome_cargo) = LOWER(?)').get(req.empresaId, cargoTrim);
+            let cgId;
             if (!existing) {
               const r = db.prepare(`
                 INSERT INTO cargos (empresa_id, nome_cargo, nivel, cbo, descricao)
                 VALUES (?, ?, ?, ?, ?)
               `).run(req.empresaId, cargoTrim, cg.nivel || 'Pleno', cg.cbo || null, cg.descricao || null);
-              cargoMap[cargoTrim.toLowerCase()] = r.lastInsertRowid;
+              cgId = r.lastInsertRowid;
             } else {
-              cargoMap[cargoTrim.toLowerCase()] = existing.id;
+              cgId = existing.id;
+              db.prepare(`
+                UPDATE cargos
+                SET nivel = COALESCE(?, nivel),
+                    cbo = COALESCE(?, cbo),
+                    descricao = COALESCE(?, descricao)
+                WHERE id = ? AND empresa_id = ?
+              `).run(cg.nivel || null, cg.cbo || null, cg.descricao || null, cgId, req.empresaId);
             }
+            cargoMap[cargoTrim.toLowerCase()] = cgId;
+            if (cg.id) cargoOldIdMap[cg.id] = cgId;
           }
         }
 
+        // 3. Departamentos - Pass 2: Vinculação Hierárquica de Setores (parent_id)
+        if (Array.isArray(departamentos)) {
+          for (const d of departamentos) {
+            if (!d || !d.nome) continue;
+            const currentDeptId = deptMap[d.nome.trim().toLowerCase()];
+            if (!currentDeptId) continue;
+
+            let parentId = null;
+            if (d.parent_nome) {
+              parentId = deptMap[d.parent_nome.trim().toLowerCase()] || null;
+            } else if (d.parent_id) {
+              parentId = deptOldIdMap[d.parent_id] || (db.prepare('SELECT id FROM departamentos WHERE id = ? AND empresa_id = ?').get(d.parent_id, req.empresaId)?.id) || null;
+            }
+
+            if (parentId && parentId === currentDeptId) {
+              parentId = null;
+            }
+
+            db.prepare('UPDATE departamentos SET parent_id = ? WHERE id = ? AND empresa_id = ?').run(parentId, currentDeptId, req.empresaId);
+          }
+        }
+
+        // 4. Colaboradores - Pass 1: Inserção e Atualização Básica
+        const colabMap = {};
+        const colabOldIdMap = {};
         if (Array.isArray(colaboradores)) {
           for (const c of colaboradores) {
             if (!c || !c.nome || !String(c.nome).trim()) continue;
@@ -210,8 +284,7 @@ const empresaController = {
                 deptMap[deptNome.toLowerCase()] = deptId;
               }
             } else if (c.departamento_id) {
-              const existing = db.prepare('SELECT id FROM departamentos WHERE id = ? AND empresa_id = ?').get(c.departamento_id, req.empresaId);
-              if (existing) deptId = existing.id;
+              deptId = deptOldIdMap[c.departamento_id] || (db.prepare('SELECT id FROM departamentos WHERE id = ? AND empresa_id = ?').get(c.departamento_id, req.empresaId)?.id) || null;
             }
 
             // 2. Resolução segura de Cargo (garante integridade referencial)
@@ -231,8 +304,7 @@ const empresaController = {
                 cargoMap[cargoNome.toLowerCase()] = cargoId;
               }
             } else if (c.cargo_id) {
-              const existing = db.prepare('SELECT id FROM cargos WHERE id = ? AND empresa_id = ?').get(c.cargo_id, req.empresaId);
-              if (existing) cargoId = existing.id;
+              cargoId = cargoOldIdMap[c.cargo_id] || (db.prepare('SELECT id FROM cargos WHERE id = ? AND empresa_id = ?').get(c.cargo_id, req.empresaId)?.id) || null;
             }
 
             // 3. Verificação de colaborador existente
@@ -275,6 +347,9 @@ const empresaController = {
               `).run(cargoId, deptId, c.foto || null, c.status || null, colabId, req.empresaId);
             }
 
+            colabMap[nomeTrim.toLowerCase()] = colabId;
+            if (c.id) colabOldIdMap[c.id] = colabId;
+
             // 4. Crachá e dados complementares
             if (colabId && (c.cpf || c.rg || c.pis_pasep || c.tipo_sanguineo)) {
               const hasCracha = db.prepare('SELECT id FROM crachas_dados WHERE colaborador_id = ? AND empresa_id = ?').get(colabId, req.empresaId);
@@ -288,6 +363,46 @@ const empresaController = {
                   console.warn('Aviso: cracha_dados ignorado na re-hidratação:', errCracha.message);
                 }
               }
+            }
+          }
+        }
+
+        // 5. Colaboradores - Pass 2: Vinculação Hierárquica de Líderes (gestor_id)
+        if (Array.isArray(colaboradores)) {
+          for (const c of colaboradores) {
+            if (!c || !c.nome) continue;
+            const currentColabId = colabMap[c.nome.trim().toLowerCase()];
+            if (!currentColabId) continue;
+
+            let gestorId = null;
+            if (c.gestor_nome) {
+              gestorId = colabMap[c.gestor_nome.trim().toLowerCase()] || null;
+            } else if (c.gestor_id) {
+              gestorId = colabOldIdMap[c.gestor_id] || (db.prepare('SELECT id FROM colaboradores WHERE id = ? AND empresa_id = ?').get(c.gestor_id, req.empresaId)?.id) || null;
+            }
+
+            if (gestorId && gestorId !== currentColabId) {
+              db.prepare('UPDATE colaboradores SET gestor_id = ? WHERE id = ? AND empresa_id = ?').run(gestorId, currentColabId, req.empresaId);
+            }
+          }
+        }
+
+        // 6. Departamentos - Pass 3: Vinculação de Responsável / Líder (responsavel_id)
+        if (Array.isArray(departamentos)) {
+          for (const d of departamentos) {
+            if (!d || !d.nome) continue;
+            const currentDeptId = deptMap[d.nome.trim().toLowerCase()];
+            if (!currentDeptId) continue;
+
+            let respId = null;
+            if (d.responsavel_nome) {
+              respId = colabMap[d.responsavel_nome.trim().toLowerCase()] || null;
+            } else if (d.responsavel_id) {
+              respId = colabOldIdMap[d.responsavel_id] || (db.prepare('SELECT id FROM colaboradores WHERE id = ? AND empresa_id = ?').get(d.responsavel_id, req.empresaId)?.id) || null;
+            }
+
+            if (respId) {
+              db.prepare('UPDATE departamentos SET responsavel_id = ? WHERE id = ? AND empresa_id = ?').run(respId, currentDeptId, req.empresaId);
             }
           }
         }

@@ -88,11 +88,41 @@ const API = {
   },
 
   // Empresa
-  getEmpresa() {
-    return this.request('/api/empresa');
+  async getEmpresa() {
+    const empresaId = this.getCurrentEmpresaId();
+    const cacheKey = `gestao_cache_empresa_${empresaId}`;
+    try {
+      const data = await this.request('/api/empresa');
+      if (data && data.empresa) {
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+        return data;
+      }
+    } catch (err) {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try { return JSON.parse(cached); } catch (_) {}
+      }
+      throw err;
+    }
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try { return JSON.parse(cached); } catch (_) {}
+    }
+    return { empresa: {} };
   },
-  updateEmpresa(data) {
-    return this.request('/api/empresa', { method: 'PUT', body: data });
+
+  async updateEmpresa(data) {
+    const res = await this.request('/api/empresa', { method: 'PUT', body: data });
+    const empresaId = this.getCurrentEmpresaId();
+    const cacheKey = `gestao_cache_empresa_${empresaId}`;
+    let cached = {};
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) cached = JSON.parse(raw);
+    } catch (_) {}
+    cached.empresa = { ...(cached.empresa || {}), ...data };
+    localStorage.setItem(cacheKey, JSON.stringify(cached));
+    return res;
   },
   listUsers() {
     return this.request('/api/empresa/usuarios');
@@ -115,16 +145,61 @@ const API = {
     }
   },
 
-  async rehydrateTenant(data, options = {}) {
+  async rehydrateTenant(data = {}, options = {}) {
+    const empresaId = this.getCurrentEmpresaId();
+
+    let empresaObj = data.empresa;
+    if (!empresaObj) {
+      try {
+        const raw = localStorage.getItem(`gestao_cache_empresa_${empresaId}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          empresaObj = parsed.empresa || parsed;
+        }
+      } catch (_) {}
+    }
+
+    let departamentos = data.departamentos;
+    if (!departamentos) {
+      try {
+        const raw = localStorage.getItem(`gestao_cache_departamentos_${empresaId}`);
+        if (raw) departamentos = JSON.parse(raw);
+      } catch (_) {}
+    }
+
+    let cargos = data.cargos;
+    if (!cargos) {
+      try {
+        const raw = localStorage.getItem(`gestao_cache_cargos_${empresaId}`);
+        if (raw) cargos = JSON.parse(raw);
+      } catch (_) {}
+    }
+
+    let colaboradores = data.colaboradores;
+    if (!colaboradores) {
+      try {
+        const raw = localStorage.getItem(`gestao_cache_colaboradores_${empresaId}`);
+        if (raw) colaboradores = JSON.parse(raw);
+      } catch (_) {}
+    }
+
+    const payload = {
+      empresa: empresaObj,
+      departamentos,
+      cargos,
+      colaboradores
+    };
+
     return this.request('/api/empresa/rehydrate', {
       method: 'POST',
-      body: data,
+      body: payload,
       silent: options.silent !== undefined ? options.silent : true
     });
   },
 
   async resetTestData() {
     const empresaId = this.getCurrentEmpresaId();
+    localStorage.removeItem(`gestao_cache_empresa_${empresaId}`);
     localStorage.removeItem(`gestao_cache_colaboradores_${empresaId}`);
     localStorage.removeItem(`gestao_cache_departamentos_${empresaId}`);
     localStorage.removeItem(`gestao_cache_cargos_${empresaId}`);
@@ -156,17 +231,49 @@ const API = {
     }
     return serverList || [];
   },
-  getDepartamentosTree() {
-    return this.request('/api/departamentos/tree');
+
+  async getDepartamentosTree() {
+    const res = await this.request('/api/departamentos/tree');
+    if (!res || !res.tree || res.tree.length === 0) {
+      const empresaId = this.getCurrentEmpresaId();
+      const cached = localStorage.getItem(`gestao_cache_departamentos_${empresaId}`);
+      if (cached) {
+        try {
+          const cachedList = JSON.parse(cached);
+          if (Array.isArray(cachedList) && cachedList.length > 0) {
+            await this.rehydrateTenant({ departamentos: cachedList }, { silent: true }).catch(() => {});
+            return await this.request('/api/departamentos/tree');
+          }
+        } catch (_) {}
+      }
+    }
+    return res;
   },
-  createDepartamento(data) {
-    return this.request('/api/departamentos', { method: 'POST', body: data });
+
+  async createDepartamento(data) {
+    const res = await this.request('/api/departamentos', { method: 'POST', body: data });
+    await this.getDepartamentos().catch(() => {});
+    return res;
   },
-  updateDepartamento(id, data) {
-    return this.request(`/api/departamentos/${id}`, { method: 'PUT', body: data });
+
+  async updateDepartamento(id, data) {
+    const res = await this.request(`/api/departamentos/${id}`, { method: 'PUT', body: data });
+    await this.getDepartamentos().catch(() => {});
+    return res;
   },
-  deleteDepartamento(id) {
-    return this.request(`/api/departamentos/${id}`, { method: 'DELETE' });
+
+  async deleteDepartamento(id) {
+    const res = await this.request(`/api/departamentos/${id}`, { method: 'DELETE' });
+    const empresaId = this.getCurrentEmpresaId();
+    const cacheKey = `gestao_cache_departamentos_${empresaId}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const list = JSON.parse(cached).filter(d => d.id !== id);
+        localStorage.setItem(cacheKey, JSON.stringify(list));
+      }
+    } catch (_) {}
+    return res;
   },
 
   // Cargos
@@ -194,14 +301,31 @@ const API = {
     }
     return serverList || [];
   },
-  createCargo(data) {
-    return this.request('/api/cargos', { method: 'POST', body: data });
+
+  async createCargo(data) {
+    const res = await this.request('/api/cargos', { method: 'POST', body: data });
+    await this.getCargos().catch(() => {});
+    return res;
   },
-  updateCargo(id, data) {
-    return this.request(`/api/cargos/${id}`, { method: 'PUT', body: data });
+
+  async updateCargo(id, data) {
+    const res = await this.request(`/api/cargos/${id}`, { method: 'PUT', body: data });
+    await this.getCargos().catch(() => {});
+    return res;
   },
-  deleteCargo(id) {
-    return this.request(`/api/cargos/${id}`, { method: 'DELETE' });
+
+  async deleteCargo(id) {
+    const res = await this.request(`/api/cargos/${id}`, { method: 'DELETE' });
+    const empresaId = this.getCurrentEmpresaId();
+    const cacheKey = `gestao_cache_cargos_${empresaId}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const list = JSON.parse(cached).filter(c => c.id !== id);
+        localStorage.setItem(cacheKey, JSON.stringify(list));
+      }
+    } catch (_) {}
+    return res;
   },
 
   // Colaboradores
@@ -226,23 +350,7 @@ const API = {
         try {
           const cachedList = JSON.parse(cached);
           if (Array.isArray(cachedList) && cachedList.length > 0) {
-            let departamentos = [];
-            let cargos = [];
-            try {
-              const dRaw = localStorage.getItem(`gestao_cache_departamentos_${empresaId}`);
-              if (dRaw) departamentos = JSON.parse(dRaw);
-            } catch (_) {}
-            try {
-              const cRaw = localStorage.getItem(`gestao_cache_cargos_${empresaId}`);
-              if (cRaw) cargos = JSON.parse(cRaw);
-            } catch (_) {}
-
-            this.rehydrateTenant({
-              colaboradores: cachedList,
-              departamentos,
-              cargos
-            }, { silent: true }).catch(() => {});
-
+            this.rehydrateTenant({ colaboradores: cachedList }, { silent: true }).catch(() => {});
             return cachedList;
           }
         } catch (_) {}
@@ -254,18 +362,31 @@ const API = {
   getColaboradorById(id) {
     return this.request(`/api/colaboradores/${id}`);
   },
-  createColaborador(data) {
-    return this.request('/api/colaboradores', { method: 'POST', body: data });
+
+  async createColaborador(data) {
+    const res = await this.request('/api/colaboradores', { method: 'POST', body: data });
+    await this.getColaboradores().catch(() => {});
+    return res;
   },
-  updateColaborador(id, data) {
-    return this.request(`/api/colaboradores/${id}`, { method: 'PUT', body: data });
+
+  async updateColaborador(id, data) {
+    const res = await this.request(`/api/colaboradores/${id}`, { method: 'PUT', body: data });
+    await this.getColaboradores().catch(() => {});
+    return res;
   },
-  moverColaborador(id, departamento_id) {
-    return this.request(`/api/colaboradores/${id}/mover`, { method: 'PUT', body: { departamento_id } });
+
+  async moverColaborador(id, departamento_id) {
+    const res = await this.request(`/api/colaboradores/${id}/mover`, { method: 'PUT', body: { departamento_id } });
+    await this.getColaboradores().catch(() => {});
+    return res;
   },
-  updatePhoto(id, foto) {
-    return this.request(`/api/colaboradores/${id}/foto`, { method: 'PUT', body: { foto } });
+
+  async updatePhoto(id, foto) {
+    const res = await this.request(`/api/colaboradores/${id}/foto`, { method: 'PUT', body: { foto } });
+    await this.getColaboradores().catch(() => {});
+    return res;
   },
+
   async deleteColaborador(id) {
     const res = await this.request(`/api/colaboradores/${id}`, { method: 'DELETE' });
     const empresaId = this.getCurrentEmpresaId();

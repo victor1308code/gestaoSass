@@ -48,7 +48,18 @@ const App = {
 
     // Header da Sidebar
     const companyName = document.getElementById('sidebar-company-name');
-    if (companyName) companyName.textContent = u.empresa?.nome || 'Gestão SaaS';
+    if (companyName) {
+      const empresaId = API.getCurrentEmpresaId();
+      let cachedName = null;
+      try {
+        const raw = localStorage.getItem(`gestao_cache_empresa_${empresaId}`);
+        if (raw) {
+          const p = JSON.parse(raw);
+          cachedName = p.empresa?.nome_fantasia || p.nome_fantasia;
+        }
+      } catch (_) {}
+      companyName.textContent = cachedName || u.empresa?.nome || u.empresa?.nome_fantasia || 'Gestão SaaS';
+    }
 
     // Perfil Topbar
     const topbarEmail = document.getElementById('topbar-user-email');
