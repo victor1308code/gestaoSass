@@ -57,10 +57,9 @@ function seedDatabase(db) {
       `).run(empresaId, HASH_SENHA123);
     }
 
-    // 4. Seed Departamentos e Colaboradores (20 Oficiais se vazio)
-    const { totalColabs } = db.prepare('SELECT COUNT(*) as totalColabs FROM colaboradores WHERE empresa_id = ?').get(empresaId) || { totalColabs: 0 };
-    if (totalColabs < 20) {
-      // Limpa dados antigos da empresa
+    // 4. Seed Departamentos e Colaboradores (apenas na criação inicial do banco)
+    if (totalEmpresas === 0) {
+      // Limpa dados antigos da empresa se houver
       db.prepare('DELETE FROM crachas_dados WHERE empresa_id = ?').run(empresaId);
       db.prepare('DELETE FROM colaboradores WHERE empresa_id = ?').run(empresaId);
       db.prepare('DELETE FROM departamentos WHERE empresa_id = ?').run(empresaId);

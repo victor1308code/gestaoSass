@@ -154,16 +154,17 @@ const empresaController = {
         const deptMap = {};
         if (Array.isArray(departamentos)) {
           for (const d of departamentos) {
-            if (!d.nome) continue;
-            const existing = db.prepare('SELECT id FROM departamentos WHERE empresa_id = ? AND LOWER(nome) = LOWER(?)').get(req.empresaId, d.nome.trim());
+            if (!d || !d.nome || !String(d.nome).trim()) continue;
+            const nomeTrim = String(d.nome).trim();
+            const existing = db.prepare('SELECT id FROM departamentos WHERE empresa_id = ? AND LOWER(nome) = LOWER(?)').get(req.empresaId, nomeTrim);
             if (!existing) {
               const r = db.prepare(`
                 INSERT INTO departamentos (empresa_id, nome, sigla, ramal, cor, ordem)
                 VALUES (?, ?, ?, ?, ?, ?)
-              `).run(req.empresaId, d.nome.trim(), d.sigla || null, d.ramal || null, d.cor || '#2563eb', d.ordem || 1);
-              deptMap[d.nome.toLowerCase()] = r.lastInsertRowid;
+              `).run(req.empresaId, nomeTrim, d.sigla || null, d.ramal || null, d.cor || '#2563eb', d.ordem || 1);
+              deptMap[nomeTrim.toLowerCase()] = r.lastInsertRowid;
             } else {
-              deptMap[d.nome.toLowerCase()] = existing.id;
+              deptMap[nomeTrim.toLowerCase()] = existing.id;
             }
           }
         }
@@ -171,73 +172,121 @@ const empresaController = {
         const cargoMap = {};
         if (Array.isArray(cargos)) {
           for (const cg of cargos) {
-            if (!cg.nome_cargo) continue;
-            const existing = db.prepare('SELECT id FROM cargos WHERE empresa_id = ? AND LOWER(nome_cargo) = LOWER(?)').get(req.empresaId, cg.nome_cargo.trim());
+            const cargoNome = cg.nome_cargo || cg.nome;
+            if (!cg || !cargoNome || !String(cargoNome).trim()) continue;
+            const cargoTrim = String(cargoNome).trim();
+            const existing = db.prepare('SELECT id FROM cargos WHERE empresa_id = ? AND LOWER(nome_cargo) = LOWER(?)').get(req.empresaId, cargoTrim);
             if (!existing) {
               const r = db.prepare(`
                 INSERT INTO cargos (empresa_id, nome_cargo, nivel, cbo, descricao)
                 VALUES (?, ?, ?, ?, ?)
-              `).run(req.empresaId, cg.nome_cargo.trim(), cg.nivel || 'Pleno', cg.cbo || null, cg.descricao || null);
-              cargoMap[cg.nome_cargo.toLowerCase()] = r.lastInsertRowid;
+              `).run(req.empresaId, cargoTrim, cg.nivel || 'Pleno', cg.cbo || null, cg.descricao || null);
+              cargoMap[cargoTrim.toLowerCase()] = r.lastInsertRowid;
             } else {
-              cargoMap[cg.nome_cargo.toLowerCase()] = existing.id;
+              cargoMap[cargoTrim.toLowerCase()] = existing.id;
             }
           }
         }
 
         if (Array.isArray(colaboradores)) {
           for (const c of colaboradores) {
-            if (!c.nome) continue;
+            if (!c || !c.nome || !String(c.nome).trim()) continue;
+            const nomeTrim = String(c.nome).trim();
 
-            let deptId = c.departamento_id;
-            if (!deptId && c.departamento_nome) {
-              deptId = deptMap[c.departamento_nome.toLowerCase()];
-              if (!deptId) {
-                const existing = db.prepare('SELECT id FROM departamentos WHERE empresa_id = ? AND LOWER(nome) = LOWER(?)').get(req.empresaId, c.departamento_nome.trim());
-                deptId = existing ? existing.id : db.prepare('INSERT INTO departamentos (empresa_id, nome) VALUES (?, ?)').run(req.empresaId, c.departamento_nome.trim()).lastInsertRowid;
-                deptMap[c.departamento_nome.toLowerCase()] = deptId;
+            // 1. Resolução segura de Departamento (garante integridade referencial)
+            let deptId = null;
+            const deptNome = (c.departamento_nome || (c.departamento && c.departamento.nome) || '').trim();
+            if (deptNome) {
+              if (deptMap[deptNome.toLowerCase()]) {
+                deptId = deptMap[deptNome.toLowerCase()];
+              } else {
+                const existing = db.prepare('SELECT id FROM departamentos WHERE empresa_id = ? AND LOWER(nome) = LOWER(?)').get(req.empresaId, deptNome);
+                if (existing) {
+                  deptId = existing.id;
+                } else {
+                  const r = db.prepare('INSERT INTO departamentos (empresa_id, nome, cor) VALUES (?, ?, ?)').run(req.empresaId, deptNome, c.departamento_cor || '#2563eb');
+                  deptId = r.lastInsertRowid;
+                }
+                deptMap[deptNome.toLowerCase()] = deptId;
               }
+            } else if (c.departamento_id) {
+              const existing = db.prepare('SELECT id FROM departamentos WHERE id = ? AND empresa_id = ?').get(c.departamento_id, req.empresaId);
+              if (existing) deptId = existing.id;
             }
 
-            let cargoId = c.cargo_id;
-            if (!cargoId && c.nome_cargo) {
-              cargoId = cargoMap[c.nome_cargo.toLowerCase()];
-              if (!cargoId) {
-                const existing = db.prepare('SELECT id FROM cargos WHERE empresa_id = ? AND LOWER(nome_cargo) = LOWER(?)').get(req.empresaId, c.nome_cargo.trim());
-                cargoId = existing ? existing.id : db.prepare("INSERT INTO cargos (empresa_id, nome_cargo, nivel) VALUES (?, ?, 'Pleno')").run(req.empresaId, c.nome_cargo.trim()).lastInsertRowid;
-                cargoMap[c.nome_cargo.toLowerCase()] = cargoId;
+            // 2. Resolução segura de Cargo (garante integridade referencial)
+            let cargoId = null;
+            const cargoNome = (c.nome_cargo || (c.cargo && c.cargo.nome_cargo) || '').trim();
+            if (cargoNome) {
+              if (cargoMap[cargoNome.toLowerCase()]) {
+                cargoId = cargoMap[cargoNome.toLowerCase()];
+              } else {
+                const existing = db.prepare('SELECT id FROM cargos WHERE empresa_id = ? AND LOWER(nome_cargo) = LOWER(?)').get(req.empresaId, cargoNome);
+                if (existing) {
+                  cargoId = existing.id;
+                } else {
+                  const r = db.prepare("INSERT INTO cargos (empresa_id, nome_cargo, nivel) VALUES (?, ?, ?)").run(req.empresaId, cargoNome, c.cargo_nivel || 'Pleno');
+                  cargoId = r.lastInsertRowid;
+                }
+                cargoMap[cargoNome.toLowerCase()] = cargoId;
               }
+            } else if (c.cargo_id) {
+              const existing = db.prepare('SELECT id FROM cargos WHERE id = ? AND empresa_id = ?').get(c.cargo_id, req.empresaId);
+              if (existing) cargoId = existing.id;
             }
 
-            const existing = db.prepare('SELECT id FROM colaboradores WHERE empresa_id = ? AND (nome = ? OR (matricula IS NOT NULL AND matricula = ?))').get(req.empresaId, c.nome.trim(), c.matricula || '');
-            let colabId = existing ? existing.id : null;
+            // 3. Verificação de colaborador existente
+            let existingColab = null;
+            const matriculaClean = c.matricula && String(c.matricula).trim() ? String(c.matricula).trim() : null;
+            if (matriculaClean) {
+              existingColab = db.prepare('SELECT id FROM colaboradores WHERE empresa_id = ? AND matricula = ?').get(req.empresaId, matriculaClean);
+            }
+            if (!existingColab) {
+              existingColab = db.prepare('SELECT id FROM colaboradores WHERE empresa_id = ? AND LOWER(nome) = LOWER(?)').get(req.empresaId, nomeTrim);
+            }
 
-            if (!existing) {
+            let colabId = null;
+            if (!existingColab) {
               const r = db.prepare(`
                 INSERT INTO colaboradores (empresa_id, matricula, nome, email, telefone, cargo_id, departamento_id, data_admissao, status, foto)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
               `).run(
                 req.empresaId,
-                c.matricula || null,
-                c.nome.trim(),
+                matriculaClean,
+                nomeTrim,
                 c.email || null,
                 c.telefone || null,
-                cargoId || null,
-                deptId || null,
+                cargoId,
+                deptId,
                 c.data_admissao || new Date().toISOString().split('T')[0],
                 c.status || 'ativo',
                 c.foto || null
               );
               colabId = r.lastInsertRowid;
+            } else {
+              colabId = existingColab.id;
+              db.prepare(`
+                UPDATE colaboradores 
+                SET cargo_id = COALESCE(?, cargo_id),
+                    departamento_id = COALESCE(?, departamento_id),
+                    foto = COALESCE(?, foto),
+                    status = COALESCE(?, status)
+                WHERE id = ? AND empresa_id = ?
+              `).run(cargoId, deptId, c.foto || null, c.status || null, colabId, req.empresaId);
             }
 
+            // 4. Crachá e dados complementares
             if (colabId && (c.cpf || c.rg || c.pis_pasep || c.tipo_sanguineo)) {
               const hasCracha = db.prepare('SELECT id FROM crachas_dados WHERE colaborador_id = ? AND empresa_id = ?').get(colabId, req.empresaId);
               if (!hasCracha) {
-                db.prepare(`
-                  INSERT INTO crachas_dados (colaborador_id, empresa_id, tipo_sanguineo, rg, cpf, pis_pasep, data_emissao)
-                  VALUES (?, ?, ?, ?, ?, ?, CURRENT_DATE)
-                `).run(colabId, req.empresaId, c.tipo_sanguineo || 'O+', c.rg || null, c.cpf || null, c.pis_pasep || null);
+                try {
+                  db.prepare(`
+                    INSERT INTO crachas_dados (colaborador_id, empresa_id, tipo_sanguineo, rg, cpf, pis_pasep, data_emissao)
+                    VALUES (?, ?, ?, ?, ?, ?, date('now'))
+                  `).run(colabId, req.empresaId, c.tipo_sanguineo || 'O+', c.rg || null, c.cpf || null, c.pis_pasep || null);
+                } catch (errCracha) {
+                  console.warn('Aviso: cracha_dados ignorado na re-hidratação:', errCracha.message);
+                }
               }
             }
           }

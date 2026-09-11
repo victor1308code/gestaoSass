@@ -52,7 +52,9 @@ const API = {
 
       return data;
     } catch (err) {
-      this.toast(err.message, 'error');
+      if (!options.silent) {
+        this.toast(err.message, 'error');
+      }
       throw err;
     }
   },
@@ -113,8 +115,12 @@ const API = {
     }
   },
 
-  async rehydrateTenant(data) {
-    return this.request('/api/empresa/rehydrate', { method: 'POST', body: data });
+  async rehydrateTenant(data, options = {}) {
+    return this.request('/api/empresa/rehydrate', {
+      method: 'POST',
+      body: data,
+      silent: options.silent !== undefined ? options.silent : true
+    });
   },
 
   async resetTestData() {
@@ -142,6 +148,7 @@ const API = {
         try {
           const cachedList = JSON.parse(cached);
           if (Array.isArray(cachedList) && cachedList.length > 0) {
+            this.rehydrateTenant({ departamentos: cachedList }, { silent: true }).catch(() => {});
             return cachedList;
           }
         } catch (_) {}
@@ -179,6 +186,7 @@ const API = {
         try {
           const cachedList = JSON.parse(cached);
           if (Array.isArray(cachedList) && cachedList.length > 0) {
+            this.rehydrateTenant({ cargos: cachedList }, { silent: true }).catch(() => {});
             return cachedList;
           }
         } catch (_) {}
@@ -218,7 +226,23 @@ const API = {
         try {
           const cachedList = JSON.parse(cached);
           if (Array.isArray(cachedList) && cachedList.length > 0) {
-            this.rehydrateTenant({ colaboradores: cachedList }).catch(console.error);
+            let departamentos = [];
+            let cargos = [];
+            try {
+              const dRaw = localStorage.getItem(`gestao_cache_departamentos_${empresaId}`);
+              if (dRaw) departamentos = JSON.parse(dRaw);
+            } catch (_) {}
+            try {
+              const cRaw = localStorage.getItem(`gestao_cache_cargos_${empresaId}`);
+              if (cRaw) cargos = JSON.parse(cRaw);
+            } catch (_) {}
+
+            this.rehydrateTenant({
+              colaboradores: cachedList,
+              departamentos,
+              cargos
+            }, { silent: true }).catch(() => {});
+
             return cachedList;
           }
         } catch (_) {}
