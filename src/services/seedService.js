@@ -170,6 +170,7 @@ function seedDatabase(db) {
       `).run(teste01Id, HASH_SENHA123);
     } else {
       teste01Id = teste01.id;
+      db.prepare("UPDATE usuarios SET senha_hash = ? WHERE email = 'admin@teste01.com'").run(HASH_SENHA123);
     }
 
     // Garante que os colaboradores do Control iD estejam sempre populados na TESTE01 (mesmo após cold start da Vercel)
