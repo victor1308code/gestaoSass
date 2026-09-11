@@ -53,6 +53,13 @@ const CargosView = {
   async loadData() {
     try {
       this.cargos = await API.getCargos();
+      const colabs = await API.getColaboradores().catch(() => []);
+      if (Array.isArray(colabs) && colabs.length > 0) {
+        this.cargos = (this.cargos || []).map(cg => ({
+          ...cg,
+          total_colaboradores: colabs.filter(c => c.cargo_id == cg.id).length
+        }));
+      }
       this.renderTable(this.cargos);
     } catch (err) {
       const tbody = document.getElementById('cargos-table-body');
@@ -182,7 +189,7 @@ const CargosView = {
   },
 
   async openEditModal(id) {
-    const cargo = (this.cargos || []).find(c => c.id === id);
+    const cargo = (this.cargos || []).find(c => c.id == id);
     if (!cargo) return;
 
     const niveis = ['C-Level', 'Diretoria', 'Gerência', 'Coordenação', 'Especialista', 'Sênior', 'Pleno', 'Júnior', 'Estágio', 'Operacional'];

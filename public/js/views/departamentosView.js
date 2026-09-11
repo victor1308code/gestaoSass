@@ -55,22 +55,30 @@ const DepartamentosView = {
         return;
       }
 
-      tbody.innerHTML = this.departamentos.map(d => `
+      tbody.innerHTML = this.departamentos.map(d => {
+        const parentDept = d.parent_id ? this.departamentos.find(p => p.id == d.parent_id) : null;
+        const parentNome = parentDept ? parentDept.nome : d.parent_nome;
+        const respColab = d.responsavel_id ? this.colaboradores.find(c => c.id == d.responsavel_id) : null;
+        const respNome = respColab ? respColab.nome : d.responsavel_nome;
+        const totalColabs = (this.colaboradores || []).filter(c => c.departamento_id == d.id).length;
+
+        return `
         <tr>
           <td><div style="width:12px; height:12px; border-radius:2px; background:${d.cor || 'var(--brand-primary)'};"></div></td>
           <td><strong>${d.nome}</strong></td>
           <td><span class="badge badge-default">${d.sigla || '—'}</span></td>
-          <td>${d.parent_nome ? `<strong>${d.parent_nome}</strong>` : '<span style="color:var(--text-muted); font-size:11px;">(Nível Raiz)</span>'}</td>
-          <td>${d.responsavel_nome || '<span style="color:var(--text-muted);">Não definido</span>'}</td>
+          <td>${parentNome ? `<strong>${parentNome}</strong>` : '<span style="color:var(--text-muted); font-size:11px;">(Nível Raiz)</span>'}</td>
+          <td>${respNome || '<span style="color:var(--text-muted);">Não definido</span>'}</td>
           <td>${d.ramal || '—'}</td>
-          <td><span class="badge badge-info">${d.total_colaboradores} membros</span></td>
+          <td><span class="badge badge-info">${totalColabs} membros</span></td>
           <td style="text-align:right; white-space:nowrap;">
             <button class="btn btn-outline" style="padding:2px 6px; font-size:11px;" onclick="DepartamentosView.openCreateModal(${d.id})" title="Adicionar Subsetor">+ Subsetor</button>
             <button class="btn btn-outline" style="padding:2px 6px; font-size:11px;" onclick="DepartamentosView.openEditModal(${d.id})">Editar</button>
             <button class="btn btn-danger" style="padding:2px 6px; font-size:11px;" onclick="DepartamentosView.delete(${d.id}, '${d.nome.replace(/'/g, "\\'")}')">Excluir</button>
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
     } catch (err) {
       const tbody = document.getElementById('departamentos-table-body');
       if (tbody) {
@@ -172,10 +180,10 @@ const DepartamentosView = {
       this.colaboradores = await API.getColaboradores();
     } catch (_) {}
 
-    const dept = (this.departamentos || []).find(d => d.id === id);
+    const dept = (this.departamentos || []).find(d => d.id == id);
     if (!dept) return;
 
-    const parentOpts = (this.departamentos || []).filter(d => d.id !== id).map(d => `
+    const parentOpts = (this.departamentos || []).filter(d => d.id != id).map(d => `
       <option value="${d.id}" ${dept.parent_id == d.id ? 'selected' : ''}>${d.nome} (${d.sigla || 'SET'})</option>
     `).join('');
 
