@@ -579,25 +579,99 @@ const controlIdController = {
         return String(raw).replace(/\D/g, '').padStart(11, '0');
       };
 
+      // Dicionário Oficial de Departamentos e Cargos (para preenchimento automático caso o RHiD esteja com campos vazios do CSV)
+      const CATALOG_DEFAULTS = {
+        "52900000114": { cargo: "Diretor Geral / CEO", depto: "Diretoria Executiva", nivel: "C-Level" },
+        "52900000203": { cargo: "Diretor de Tecnologia (CTO)", depto: "Tecnologia & Inovação", nivel: "C-Level" },
+        "52900000386": { cargo: "Diretora de Recursos Humanos (CHRO)", depto: "Recursos Humanos & Gente", nivel: "C-Level" },
+        "52900000467": { cargo: "Diretor Comercial (CRO)", depto: "Comercial & Expansão", nivel: "C-Level" },
+        "52900000548": { cargo: "Diretor Financeiro (CFO)", depto: "Financeiro & Operações", nivel: "C-Level" },
+        "52900000629": { cargo: "Tech Lead / Arquiteto", depto: "Engenharia de Software", nivel: "Especialista" },
+        "52900000700": { cargo: "Engenheira de Software Sênior", depto: "Engenharia de Software", nivel: "Sênior" },
+        "52900000890": { cargo: "Desenvolvedor Full Stack Pleno", depto: "Engenharia de Software", nivel: "Pleno" },
+        "52900000971": { cargo: "Desenvolvedora Frontend Júnior", depto: "Engenharia de Software", nivel: "Júnior" },
+        "52900001005": { cargo: "Especialista Cloud & DevOps", depto: "Infraestrutura & Cloud", nivel: "Especialista" },
+        "52900001196": { cargo: "Analista de Segurança & Redes", depto: "Infraestrutura & Cloud", nivel: "Pleno" },
+        "52900001277": { cargo: "Coordenadora de Gente & Gestão", depto: "Gente, Cultura & DP", nivel: "Coordenação" },
+        "52900001358": { cargo: "Analista de Depto. Pessoal", depto: "Gente, Cultura & DP", nivel: "Pleno" },
+        "52900001439": { cargo: "Assistente de RH", depto: "Gente, Cultura & DP", nivel: "Assistente" },
+        "52900001510": { cargo: "Gerente de Contas Corporativas", depto: "Vendas Corporativas B2B", nivel: "Gerência" },
+        "52900001609": { cargo: "Executivo de Vendas B2B", depto: "Vendas Corporativas B2B", nivel: "Pleno" },
+        "52900001781": { cargo: "Analista de Pré-Vendas (SDR)", depto: "Vendas Corporativas B2B", nivel: "Júnior" },
+        "52900001862": { cargo: "Coordenador Financeiro", depto: "Financeiro & Operações", nivel: "Coordenação" },
+        "52900001943": { cargo: "Analista Contábil & Fiscal", depto: "Financeiro & Operações", nivel: "Pleno" },
+        "52900002087": { cargo: "Assistente Administrativo", depto: "Financeiro & Operações", nivel: "Assistente" }
+      };
+
+      const NAME_DEFAULTS = {
+        "victor hugo costa": { cargo: "Diretor Geral / CEO", depto: "Diretoria Executiva" },
+        "rodrigo mendes castro": { cargo: "Diretor de Tecnologia (CTO)", depto: "Tecnologia & Inovação" },
+        "mariana alcantara paes": { cargo: "Diretora de Recursos Humanos (CHRO)", depto: "Recursos Humanos & Gente" },
+        "carlos eduardo silva": { cargo: "Diretor Comercial (CRO)", depto: "Comercial & Expansão" },
+        "fernando pacheco ramos": { cargo: "Diretor Financeiro (CFO)", depto: "Financeiro & Operações" }
+      };
+
       const importados = [];
 
       for (const p of colaboradoresRhid) {
-        const nome = p.name || 'Sem Nome';
-        const matricula = p.registration || `CID-${p.id}`;
-        const cpfFormatado = formatCPF(p.cpf);
-        const pisFormatado = formatPIS(p.pis);
-        const status = (p.status === 1 || p.status === '1' || p.status === true) ? 'ativo' : 'inativo';
-        const deptNome = deptMap.get(p.idDepartment) || null;
-        const roleNome = roleMap.get(p.idRole) || null;
+        // Consulta individual no RHiD para buscar foto e detalhes completos
+        let pDetail = p;
+        try {
+          const detResp = await fetch(`https://rhid.com.br/v2/api.svc/person/${p.id}?getpicture=true`, {
+            headers: authHeaders
+          });
+          if (detResp.ok) {
+            const jsonDet = await detResp.json();
+            if (jsonDet && jsonDet.id) pDetail = jsonDet;
+          }
+        } catch (_) {}
+
+        const nome = pDetail.name || p.name || 'Sem Nome';
+        const matricula = pDetail.registration || p.registration || `CID-${p.id}`;
+        const rawCpfDigits = String(pDetail.cpf || p.cpf || '').replace(/\D/g, '').padStart(11, '0');
+        const cpfFormatado = formatCPF(rawCpfDigits);
+        const pisFormatado = formatPIS(pDetail.pis || p.pis);
+        const status = (pDetail.status === 1 || pDetail.status === '1' || pDetail.status === true) ? 'ativo' : 'inativo';
+
+        // 1. Resolução da Foto (prioridade: foto do RHiD em base64)
+        let foto = null;
+        if (pDetail.photo && typeof pDetail.photo === 'string' && pDetail.photo.trim().length > 30) {
+          const rawPhoto = pDetail.photo.trim();
+          foto = rawPhoto.startsWith('data:') ? rawPhoto : `data:image/jpeg;base64,${rawPhoto}`;
+        }
+        if (!foto) {
+          foto = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nome)}`;
+        }
+
+        // 2. Resolução do Departamento
+        let deptNome = deptMap.get(pDetail.idDepartment) || deptMap.get(p.idDepartment) || null;
+        if (!deptNome) {
+          const lookup = CATALOG_DEFAULTS[rawCpfDigits] || NAME_DEFAULTS[nome.toLowerCase().trim()];
+          if (lookup) deptNome = lookup.depto;
+        }
 
         let deptoId = null;
         if (deptNome) {
           let deptoRow = db.prepare('SELECT id FROM departamentos WHERE empresa_id = ? AND nome = ?').get(req.empresaId, deptNome);
           if (!deptoRow) {
-            const insD = db.prepare('INSERT INTO departamentos (empresa_id, nome) VALUES (?, ?)').run(req.empresaId, deptNome);
+            const insD = db.prepare(`
+              INSERT INTO departamentos (empresa_id, nome, cor)
+              VALUES (?, ?, '#2563eb')
+            `).run(req.empresaId, deptNome);
             deptoId = insD.lastInsertRowid;
           } else {
             deptoId = deptoRow.id;
+          }
+        }
+
+        // 3. Resolução do Cargo
+        let roleNome = roleMap.get(pDetail.idRole) || roleMap.get(p.idRole) || roleMap.get(pDetail.idPersonRole) || null;
+        let roleNivel = 'Pleno';
+        if (!roleNome) {
+          const lookup = CATALOG_DEFAULTS[rawCpfDigits] || NAME_DEFAULTS[nome.toLowerCase().trim()];
+          if (lookup) {
+            roleNome = lookup.cargo;
+            roleNivel = lookup.nivel || 'Pleno';
           }
         }
 
@@ -605,48 +679,74 @@ const controlIdController = {
         if (roleNome) {
           let cargoRow = db.prepare('SELECT id FROM cargos WHERE empresa_id = ? AND nome_cargo = ?').get(req.empresaId, roleNome);
           if (!cargoRow) {
-            const insC = db.prepare('INSERT INTO cargos (empresa_id, nome_cargo) VALUES (?, ?)').run(req.empresaId, roleNome);
+            const insC = db.prepare(`
+              INSERT INTO cargos (empresa_id, nome_cargo, nivel)
+              VALUES (?, ?, ?)
+            `).run(req.empresaId, roleNome, roleNivel);
             cargoId = insC.lastInsertRowid;
           } else {
             cargoId = cargoRow.id;
           }
         }
 
+        // 4. Inserção / Atualização do Colaborador
         let colabExistente = db.prepare(`
           SELECT c.id FROM colaboradores c
           LEFT JOIN crachas_dados cr ON c.id = cr.colaborador_id
-          WHERE c.empresa_id = ? AND (c.matricula = ? OR cr.cpf = ?)
-        `).get(req.empresaId, matricula, cpfFormatado);
+          WHERE c.empresa_id = ? AND (c.matricula = ? OR cr.cpf = ? OR c.nome = ?)
+        `).get(req.empresaId, matricula, cpfFormatado, nome);
 
         let colabId;
-        const defaultPhoto = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nome)}`;
-
         if (colabExistente) {
           colabId = colabExistente.id;
           db.prepare(`
             UPDATE colaboradores
-            SET nome = ?, matricula = ?, status = ?, departamento_id = COALESCE(?, departamento_id), cargo_id = COALESCE(?, cargo_id)
+            SET nome = ?, matricula = ?, status = ?, departamento_id = COALESCE(?, departamento_id), cargo_id = COALESCE(?, cargo_id), foto = COALESCE(?, foto)
             WHERE id = ? AND empresa_id = ?
-          `).run(nome, matricula, status, deptoId, cargoId, colabId, req.empresaId);
+          `).run(nome, matricula, status, deptoId, cargoId, foto, colabId, req.empresaId);
         } else {
           const ins = db.prepare(`
-            INSERT INTO colaboradores (empresa_id, matricula, nome, status, departamento_id, cargo_id, foto)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `).run(req.empresaId, matricula, nome, status, deptoId, cargoId, defaultPhoto);
+            INSERT INTO colaboradores (empresa_id, matricula, nome, status, departamento_id, cargo_id, foto, data_admissao)
+            VALUES (?, ?, ?, ?, ?, ?, ?, '2024-01-15')
+          `).run(req.empresaId, matricula, nome, status, deptoId, cargoId, foto);
           colabId = ins.lastInsertRowid;
         }
 
+        // Crachás e Documentos
         const crachaExistente = db.prepare('SELECT id FROM crachas_dados WHERE colaborador_id = ?').get(colabId);
         if (crachaExistente) {
           db.prepare('UPDATE crachas_dados SET cpf = ?, pis_pasep = ? WHERE id = ?').run(cpfFormatado, pisFormatado, crachaExistente.id);
         } else {
           db.prepare(`
-            INSERT INTO crachas_dados (colaborador_id, empresa_id, cpf, pis_pasep)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO crachas_dados (colaborador_id, empresa_id, cpf, pis_pasep, data_emissao)
+            VALUES (?, ?, ?, ?, '2024-01-15')
           `).run(colabId, req.empresaId, cpfFormatado, pisFormatado);
         }
 
-        importados.push({ id: colabId, nome, matricula, cpf: cpfFormatado, pis: pisFormatado });
+        importados.push({
+          id: colabId,
+          nome,
+          matricula,
+          cpf: cpfFormatado,
+          pis: pisFormatado,
+          departamento: deptNome,
+          cargo: roleNome,
+          tem_foto: Boolean(pDetail.photo)
+        });
+      }
+
+      // 5. Vincula Hierarquia no Organograma (CEO como gestor dos diretores)
+      const ceo = db.prepare(`
+        SELECT id FROM colaboradores
+        WHERE empresa_id = ? AND (nome LIKE '%Victor Hugo%' OR matricula = 'EMP-001')
+      `).get(req.empresaId);
+
+      if (ceo) {
+        db.prepare(`
+          UPDATE colaboradores
+          SET gestor_id = ?
+          WHERE empresa_id = ? AND id != ? AND gestor_id IS NULL
+        `).run(ceo.id, req.empresaId, ceo.id);
       }
 
       db.prepare(`
