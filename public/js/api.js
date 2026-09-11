@@ -191,6 +191,15 @@ const API = {
   getDispositivosLogs() {
     return this.request('/api/dispositivos/logs');
   },
+  syncControlIdApi(data) {
+    return this.request('/api/controlid/sync-api', { method: 'POST', body: data });
+  },
+  pullControlIdApi(data) {
+    return this.request('/api/controlid/pull-api', { method: 'POST', body: data });
+  },
+  testControlIdConnection(data) {
+    return this.request('/api/controlid/test-connection', { method: 'POST', body: data });
+  },
 
   // ── MÁSCARAS DE ENTRADA ──
   maskCPF(value) {

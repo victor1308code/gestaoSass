@@ -5,37 +5,83 @@ const DispositivosView = {
   async render(container) {
     container.innerHTML = `
       <div style="display:flex; flex-direction:column; gap:20px;">
-        <!-- CABEÇALHO & AÇÕES -->
+        
+        <!-- PAINEL CENTRAL DE SINCRONIZAÇÃO DA API CONTROL ID (BANCO DE FUNCIONÁRIOS E HIERARQUIA) -->
+        <div class="card" style="border-left: 4px solid var(--brand-primary);">
+          <div class="card-header" style="flex-wrap:wrap; gap:12px;">
+            <div>
+              <div class="card-title-with-icon">
+                ${Icons.device} Integração & Sincronização com API Control iD
+              </div>
+              <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                Sincronização bidirecional do banco de colaboradores, dados pessoais e hierarquia entre o Gestão SaaS e o ambiente Control iD.
+              </p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <a href="/api/controlid/export-csv" class="btn btn-outline" target="_blank" title="Baixar CSV formatado com 76 colunas">
+                ${Icons.download} Baixar CSV Oficial Control iD
+              </a>
+              <button class="btn btn-green" onclick="DispositivosView.openCreateModal()">
+                + Cadastrar Terminal
+              </button>
+            </div>
+          </div>
+
+          <!-- CONTROLES DO AMBIENTE DE TESTES / API -->
+          <div style="background:var(--bg-surface-subtle); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-color); margin-top:4px;">
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+              <div style="flex:1; min-width:260px;">
+                <label class="form-label" style="font-size:11px; margin-bottom:2px;">Endereço / Host do Ambiente de Testes Control iD:</label>
+                <div style="display:flex; gap:6px;">
+                  <input type="text" id="controlid-test-host" class="form-control" value="192.168.1.100" placeholder="Ex: 192.168.1.100 ou http://localhost:8080" />
+                  <button class="btn btn-outline" style="white-space:nowrap;" onclick="DispositivosView.testConnection()">
+                    ${Icons.search} Testar Conexão
+                  </button>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:8px; align-items:flex-end; padding-top:14px; flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="DispositivosView.syncApiEmployees()">
+                  ⚡ Enviar Funcionários & Hierarquia (API)
+                </button>
+                <button class="btn btn-outline" onclick="DispositivosView.pullApiEmployees()">
+                  📥 Puxar Dados do Control iD (API)
+                </button>
+              </div>
+            </div>
+
+            <!-- RESULTADO DO STATUS DA COMUNICAÇÃO -->
+            <div id="controlid-api-feedback" style="display:none; padding:10px 12px; border-radius:var(--radius-sm); font-size:12px; margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- LISTA DE EQUIPAMENTOS / TERMINAIS CADASTRADOS -->
         <div class="card">
           <div class="card-header" style="flex-wrap:wrap; gap:12px;">
             <div>
               <div class="card-title-with-icon">
-                ${Icons.device} Dispositivos & Catracas Control iD
+                ${Icons.building} Terminais e Leitores Faciais Cadastrados
               </div>
               <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-                Gerenciamento de leitores faciais (iDFace), catracas e controle de acesso físico em tempo real.
+                Equipamentos autorizados a receber a base de colaboradores.
               </p>
             </div>
-            <div style="display:flex; gap:8px;">
-              <button class="btn btn-outline" onclick="DispositivosView.loadData()">${Icons.clock} Atualizar</button>
-              <button class="btn btn-green" onclick="DispositivosView.openCreateModal()">+ Novo Dispositivo</button>
-            </div>
+            <button class="btn btn-outline" onclick="DispositivosView.loadData()">${Icons.clock} Atualizar Lista</button>
           </div>
 
-          <!-- GRID DE DISPOSITIVOS -->
           <div id="devices-grid-container" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:14px; margin-top:8px;">
             <div class="skeleton skeleton-card" style="height:140px;"></div>
             <div class="skeleton skeleton-card" style="height:140px;"></div>
           </div>
         </div>
 
-        <!-- FEED DE ACESSOS EM TEMPO REAL -->
+        <!-- FEED DE REGISTROS DE SINCRONIZAÇÃO E ACESSO -->
         <div class="card">
           <div class="card-header">
             <div class="card-title-with-icon">
-              ${Icons.history} Monitor de Acessos em Tempo Real (Catracas & Portas)
+              ${Icons.history} Registro de Comunicações e Acessos
             </div>
-            <span class="badge badge-success">Feed Ativo</span>
+            <span class="badge badge-success">Sincronizado</span>
           </div>
 
           <div class="table-responsive">
@@ -43,8 +89,8 @@ const DispositivosView = {
               <thead>
                 <tr>
                   <th>Colaborador</th>
-                  <th>Dispositivo / Local</th>
-                  <th>Autenticação</th>
+                  <th>Terminal / Local</th>
+                  <th>Tipo</th>
                   <th>Status</th>
                   <th>Data & Horário</th>
                 </tr>
@@ -56,16 +102,6 @@ const DispositivosView = {
           </div>
         </div>
 
-        <!-- GUIA DE CONFIGURAÇÃO PUSH -->
-        <div class="card" style="background:var(--bg-surface-subtle);">
-          <div style="font-size:12px; font-weight:600; color:var(--text-main); margin-bottom:4px;">
-            Configuração do Modo Push nos Terminais Control iD
-          </div>
-          <p style="font-size:11px; color:var(--text-muted); line-height:1.5;">
-            Para conectar um equipamento (ex: iDFace ou Catraca iDBlock), acesse o menu de configuração do dispositivo ➔ <em>Modo de Operação: Push</em> e aponte a URL do servidor para: 
-            <code style="background:#ffffff; padding:2px 6px; border-radius:3px; border:1px solid var(--border-color); font-weight:600;">https://${window.location.host}/api/controlid/push</code>
-          </p>
-        </div>
       </div>
     `;
 
@@ -82,8 +118,8 @@ const DispositivosView = {
       if (devContainer) {
         if (!this.dispositivos || this.dispositivos.length === 0) {
           devContainer.innerHTML = `
-            <div style="grid-column: 1 / -1; text-align:center; padding:30px; color:var(--text-muted); font-size:12px;">
-              Nenhum dispositivo Control iD conectado. Clique em <strong>+ Novo Dispositivo</strong> para cadastrar.
+            <div style="grid-column: 1 / -1; text-align:center; padding:24px; color:var(--text-muted); font-size:12px;">
+              Nenhum terminal cadastrado no momento. Clique em <strong>+ Cadastrar Terminal</strong> para adicionar.
             </div>
           `;
         } else {
@@ -102,13 +138,10 @@ const DispositivosView = {
               </div>
 
               <div style="display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid var(--border-color); padding-top:10px;">
-                <button class="btn btn-outline" style="flex:1; font-size:11px; padding:4px;" onclick="DispositivosView.syncFace(${d.id})" title="Enviar colaboradores e fotos para este terminal">
+                <button class="btn btn-outline" style="flex:1; font-size:11px; padding:4px;" onclick="DispositivosView.syncFace(${d.id})" title="Enviar base de colaboradores para este terminal">
                   Sincronizar
                 </button>
-                <button class="btn btn-outline" style="flex:1; font-size:11px; padding:4px;" onclick="DispositivosView.unlock(${d.id})" title="Liberar passagem">
-                  Abrir Porta
-                </button>
-                <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="DispositivosView.delete(${d.id}, '${d.nome.replace(/'/g, "\\'")}')" title="Excluir">
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="DispositivosView.delete(${d.id}, '${d.nome.replace(/'/g, "\\'")}')" title="Remover">
                   ${Icons.trash}
                 </button>
               </div>
@@ -121,17 +154,17 @@ const DispositivosView = {
       const tbody = document.getElementById('access-logs-table-body');
       if (tbody) {
         if (!this.logs || this.logs.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:24px; color:var(--text-muted); font-size:12px;">Nenhum acesso registrado nas catracas ainda.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">Nenhum registro de acesso capturado no momento.</td></tr>`;
         } else {
           tbody.innerHTML = this.logs.map(l => `
             <tr>
               <td>
                 <div style="display:flex; align-items:center; gap:8px;">
-                  <img src="${l.colaborador_foto || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(l.colaborador_nome || 'Access')}" 
+                  <img src="${l.colaborador_foto || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(l.colaborador_nome || 'User')}" 
                        style="width:26px; height:26px; border-radius:3px; object-fit:cover; border:1px solid var(--border-color);" />
                   <div>
-                    <div style="font-weight:600; color:var(--text-main);">${l.colaborador_nome || 'Visitante / Desconhecido'}</div>
-                    <div style="font-size:10px; color:var(--text-muted);">${l.departamento_nome || 'Acesso Geral'}</div>
+                    <div style="font-weight:600; color:var(--text-main);">${l.colaborador_nome || 'Visitante'}</div>
+                    <div style="font-size:10px; color:var(--text-muted);">${l.departamento_nome || 'Geral'}</div>
                   </div>
                 </div>
               </td>
@@ -148,17 +181,106 @@ const DispositivosView = {
     }
   },
 
+  async testConnection() {
+    const host = document.getElementById('controlid-test-host')?.value.trim();
+    const fb = document.getElementById('controlid-api-feedback');
+    if (!host) {
+      API.toast('Informe o endereço IP ou Host.', 'error');
+      return;
+    }
+
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.background = '#eff6ff';
+      fb.style.border = '1px solid #bfdbfe';
+      fb.style.color = '#1e40af';
+      fb.innerHTML = `Testando comunicação com <strong>${host}</strong>...`;
+    }
+
+    try {
+      const res = await API.testControlIdConnection({ host });
+      if (fb) {
+        fb.style.display = 'block';
+        if (res.online) {
+          fb.style.background = '#ecfdf5';
+          fb.style.border = '1px solid #a7f3d0';
+          fb.style.color = '#065f46';
+          fb.innerHTML = `✅ <strong>Conexão ativa!</strong> O terminal respondeu em ${res.latency}.`;
+        } else {
+          fb.style.background = '#fffbeb';
+          fb.style.border = '1px solid #fde68a';
+          fb.style.color = '#92400e';
+          fb.innerHTML = `⚠️ <strong>Terminal não alcançado no IP ${res.host}</strong>. O sistema utilizará o modo de simulação com validação de payload para testes.`;
+        }
+      }
+    } catch (err) {
+      API.toast('Erro no teste: ' + err.message, 'error');
+    }
+  },
+
+  async syncApiEmployees() {
+    const host = document.getElementById('controlid-test-host')?.value.trim() || '192.168.1.100';
+    const fb = document.getElementById('controlid-api-feedback');
+
+    try {
+      API.toast('Iniciando sincronização com a API Control iD...', 'info');
+      const res = await API.syncControlIdApi({ host });
+      
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.background = '#ecfdf5';
+        fb.style.border = '1px solid #a7f3d0';
+        fb.style.color = '#065f46';
+        fb.innerHTML = `
+          ✅ <strong>Sincronização Concluída!</strong><br/>
+          • <strong>${res.total_funcionarios} funcionários</strong> formatados e sincronizados via <code>/create_objects.fcgi</code>.<br/>
+          • <strong>${res.total_departamentos} departamentos</strong> estruturados na hierarquia do Control iD.<br/>
+          • Modo: <em>${res.status}</em>.
+        `;
+      }
+      API.toast(res.message, 'success');
+      this.loadData();
+    } catch (err) {
+      API.toast('Erro na sincronização: ' + err.message, 'error');
+    }
+  },
+
+  async pullApiEmployees() {
+    const host = document.getElementById('controlid-test-host')?.value.trim() || '192.168.1.100';
+    const fb = document.getElementById('controlid-api-feedback');
+
+    try {
+      API.toast('Consultando banco de usuários do Control iD via API...', 'info');
+      const res = await API.pullControlIdApi({ host });
+
+      if (fb) {
+        fb.style.display = 'block';
+        fb.style.background = '#eff6ff';
+        fb.style.border = '1px solid #bfdbfe';
+        fb.style.color = '#1e40af';
+        fb.innerHTML = `
+          📥 <strong>Consulta Realizada via <code>/load_objects.fcgi</code>:</strong><br/>
+          • Usuários encontrados no terminal: <strong>${res.encontrados}</strong>.<br/>
+          • Status: Conexão com a API operacional.
+        `;
+      }
+      API.toast(res.message, 'success');
+    } catch (err) {
+      API.toast('Erro ao puxar dados: ' + err.message, 'error');
+    }
+  },
+
   openCreateModal() {
     App.openModal(`
       <div class="modal-header">
-        <h3>Novo Dispositivo Control iD</h3>
+        <h3>Cadastrar Terminal Control iD</h3>
         <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:14px;">✕</button>
       </div>
       <form onsubmit="DispositivosView.submitCreate(event)">
         <div class="modal-body">
           <div class="form-group">
             <label class="form-label">Nome de Identificação *</label>
-            <input type="text" name="nome" class="form-control" placeholder="Ex: iDFace Recepção / Catraca 01" required />
+            <input type="text" name="nome" class="form-control" placeholder="Ex: iDFace Recepção / Terminal Teste" required />
           </div>
 
           <div class="form-row">
@@ -167,36 +289,37 @@ const DispositivosView = {
               <select name="modelo" class="form-control" required>
                 <option value="iDFace">iDFace (Reconhecimento Facial)</option>
                 <option value="iDFace Max">iDFace Max (Alta Capacidade)</option>
-                <option value="iDBlock">iDBlock (Catraca Pedestre)</option>
+                <option value="iDClass">iDClass (Relógio de Ponto REP)</option>
                 <option value="iDAccess">iDAccess (Biometria / Cartão)</option>
-                <option value="iDBox">iDBox (Controlador de Portas)</option>
+                <option value="iDBlock">iDBlock (Catraca Pedestre)</option>
+                <option value="iDBox">iDBox (Controlador de Acesso)</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Localização Físico-Predial</label>
-              <input type="text" name="localizacao" class="form-control" placeholder="Ex: Entrada Principal - Bloco A" />
+              <label class="form-label">Localização</label>
+              <input type="text" name="localizacao" class="form-control" placeholder="Ex: Laboratório / Entrada" />
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Endereço IP na Rede Local</label>
+              <label class="form-label">Endereço IP na Rede</label>
               <input type="text" name="ip" class="form-control" placeholder="Ex: 192.168.1.100" />
             </div>
             <div class="form-group">
-              <label class="form-label">Porta de Comunicação</label>
+              <label class="form-label">Porta</label>
               <input type="number" name="porta" class="form-control" value="80" />
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Identificador / UUID do Equipamento</label>
-            <input type="text" name="identificador_uuid" class="form-control" placeholder="Deixe em branco para gerar automaticamente" />
+            <label class="form-label">UUID de Identificação</label>
+            <input type="text" name="identificador_uuid" class="form-control" placeholder="Deixe em branco para gerar automático" />
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
-          <button type="submit" class="btn btn-green">Salvar Equipamento</button>
+          <button type="submit" class="btn btn-green">Salvar Terminal</button>
         </div>
       </form>
     `);
@@ -209,7 +332,7 @@ const DispositivosView = {
 
     try {
       await API.createDispositivo(data);
-      API.toast('Dispositivo cadastrado com sucesso!', 'success');
+      API.toast('Terminal cadastrado com sucesso!', 'success');
       App.closeModal();
       this.loadData();
     } catch (err) {
@@ -219,18 +342,8 @@ const DispositivosView = {
 
   async syncFace(id) {
     try {
-      API.toast('Iniciando sincronização de biometrias faciais...', 'info');
+      API.toast('Enviando colaboradores e dados para o terminal...', 'info');
       const res = await API.syncDispositivo(id);
-      API.toast(res.message, 'success');
-      this.loadData();
-    } catch (err) {
-      API.toast(err.message, 'error');
-    }
-  },
-
-  async unlock(id) {
-    try {
-      const res = await API.remoteUnlockDispositivo(id);
       API.toast(res.message, 'success');
       this.loadData();
     } catch (err) {
@@ -243,7 +356,7 @@ const DispositivosView = {
 
     try {
       await API.deleteDispositivo(id);
-      API.toast('Dispositivo removido.', 'success');
+      API.toast('Terminal removido.', 'success');
       this.loadData();
     } catch (err) {
       API.toast(err.message, 'error');

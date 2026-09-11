@@ -18,6 +18,7 @@ const ColaboradoresView = {
           </div>
 
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <a href="/api/controlid/export-csv" class="btn btn-outline" target="_blank" title="Download do CSV formatado com 76 colunas para Control iD">${Icons.download} CSV Control iD</a>
             <a href="/api/colaboradores/export/csv" class="btn btn-outline" target="_blank">${Icons.download} Exportar CSV</a>
             <button class="btn btn-outline" onclick="ColaboradoresView.openImportModal()">${Icons.upload} Importar CSV</button>
             <button class="btn btn-green" onclick="ColaboradoresView.openCreateModal()">+ Novo Colaborador</button>

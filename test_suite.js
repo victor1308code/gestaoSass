@@ -100,12 +100,13 @@ async function runTests() {
     const colabId = createColabRes.data.id;
 
     // ── 6. TESTE MOVIMENTAÇÃO DE SETOR ──
+    const targetDeptId = treeRes.data.tree[0]?.id || newDeptId;
     const moveRes = await api(`/api/colaboradores/${colabId}/mover`, {
       method: 'PUT',
       headers: authHeaders,
-      body: { departamento_id: 1 }
+      body: { departamento_id: targetDeptId }
     });
-    logTest('6.1 PUT /api/colaboradores/:id/mover', moveRes.ok, `Movido para Diretoria`);
+    logTest('6.1 PUT /api/colaboradores/:id/mover', moveRes.ok, `Movido para Dept ${targetDeptId}`);
 
     // ── 7. TESTE HISTÓRICO & AUDITORIA ──
     const histRes = await api('/api/historico', { headers: authHeaders });
@@ -173,6 +174,36 @@ async function runTests() {
     const logsRes = await api('/api/dispositivos/logs', { headers: authHeaders });
     const hasPushLog = logsRes.data.some(l => l.colaborador_nome === 'Juliana Paes Ferreira');
     logTest('13.1 GET /api/dispositivos/logs (Feed de Acessos)', hasPushLog, `Logs capturados: ${logsRes.data?.length}`);
+
+    // ── 13.2 TESTE EXPORTAÇÃO CSV OFICIAL CONTROL ID ──
+    const csvExportRes = await fetch(`http://localhost:${PORT}/api/controlid/export-csv`, { headers: authHeaders });
+    const csvText = await csvExportRes.text();
+    const csvHasHeader = csvText.includes('id_funcionario;CPF;PIS;Nome;Matrícula;');
+    logTest('13.2 GET /api/controlid/export-csv (CSV Oficial 76 Colunas)', csvExportRes.ok && csvHasHeader, `Cabeçalho verificado`);
+
+    // ── 13.3 TESTE SINCRONIZAÇÃO DE BANCO E HIERARQUIA VIA API ──
+    const syncApiRes = await api('/api/controlid/sync-api', {
+      method: 'POST',
+      headers: authHeaders,
+      body: { host: '192.168.1.100' }
+    });
+    logTest('13.3 POST /api/controlid/sync-api (Sincronização de Funcionários e Hierarquia)', syncApiRes.ok && syncApiRes.data.total_funcionarios > 0, `Colabs: ${syncApiRes.data?.total_funcionarios}, Depts: ${syncApiRes.data?.total_departamentos}`);
+
+    // ── 13.4 TESTE PUXAR USUÁRIOS DA API CONTROL ID ──
+    const pullApiRes = await api('/api/controlid/pull-api', {
+      method: 'POST',
+      headers: authHeaders,
+      body: { host: '192.168.1.100' }
+    });
+    logTest('13.4 POST /api/controlid/pull-api (Consulta de Usuários)', pullApiRes.ok, `Status: Operacional`);
+
+    // ── 13.5 TESTE CONECTIVIDADE / PING COM TERMINAL ──
+    const pingRes = await api('/api/controlid/test-connection', {
+      method: 'POST',
+      headers: authHeaders,
+      body: { host: '192.168.1.100' }
+    });
+    logTest('13.5 POST /api/controlid/test-connection (Teste Conexão)', pingRes.ok, `Host: ${pingRes.data?.host}`);
 
     // ── 14. TESTE DASHBOARD METRICS ──
     const dashRes = await api('/api/dashboard', { headers: authHeaders });

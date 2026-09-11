@@ -66,6 +66,12 @@ router.post('/dispositivos/:id/sincronizar', requireAuth, requireTenant, require
 router.post('/dispositivos/:id/abrir', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.remoteUnlock);
 router.get('/dispositivos/logs', requireAuth, requireTenant, controlIdController.listLogs);
 
+// Sincronização Direta e Exportação Control iD
+router.get('/controlid/export-csv', requireAuth, requireTenant, controlIdController.exportCsv);
+router.post('/controlid/sync-api', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.syncApi);
+router.post('/controlid/pull-api', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.pullApi);
+router.post('/controlid/test-connection', requireAuth, requireTenant, controlIdController.testConnection);
+
 // Webhook Push dos equipamentos Control iD
 router.post('/controlid/push', controlIdController.handlePush);
 
