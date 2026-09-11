@@ -155,7 +155,7 @@ function seedDatabase(db) {
       }
     }
 
-    // 5. Seed Empresa TESTE01 (com os colaboradores do Control iD persistidos para Vercel)
+    // 5. Seed Empresa TESTE01 (limpa e zerada para novos testes do zero)
     let teste01 = db.prepare("SELECT id FROM empresas WHERE slug = 'teste01'").get();
     let teste01Id;
     if (!teste01) {
@@ -171,47 +171,6 @@ function seedDatabase(db) {
     } else {
       teste01Id = teste01.id;
       db.prepare("UPDATE usuarios SET senha_hash = ? WHERE email = 'admin@teste01.com'").run(HASH_SENHA123);
-    }
-
-    // Garante que os colaboradores do Control iD estejam sempre populados na TESTE01 (mesmo após cold start da Vercel)
-    const { totalColabsTeste01 } = db.prepare('SELECT COUNT(*) as totalColabsTeste01 FROM colaboradores WHERE empresa_id = ?').get(teste01Id) || { totalColabsTeste01: 0 };
-    if (totalColabsTeste01 < 4) {
-      // 1. Departamentos
-      const dCEO = db.prepare(`INSERT INTO departamentos (empresa_id, parent_id, nome, sigla, ramal, cor, ordem) VALUES (?, NULL, 'Diretoria Executiva', 'DIR-EX', '100', '#1e3a8a', 1)`).run(teste01Id).lastInsertRowid;
-      const dTI = db.prepare(`INSERT INTO departamentos (empresa_id, parent_id, nome, sigla, ramal, cor, ordem) VALUES (?, ?, 'Tecnologia & Inovação', 'DITEC', '200', '#2563eb', 2)`).run(teste01Id, dCEO).lastInsertRowid;
-      const dRH = db.prepare(`INSERT INTO departamentos (empresa_id, parent_id, nome, sigla, ramal, cor, ordem) VALUES (?, ?, 'Recursos Humanos & Gente', 'DIR-RH', '300', '#db2777', 3)`).run(teste01Id, dCEO).lastInsertRowid;
-      const dCOM = db.prepare(`INSERT INTO departamentos (empresa_id, parent_id, nome, sigla, ramal, cor, ordem) VALUES (?, ?, 'Comercial & Expansão', 'DIR-COM', '400', '#059669', 4)`).run(teste01Id, dCEO).lastInsertRowid;
-
-      // 2. Cargos
-      const insCargo = db.prepare('INSERT INTO cargos (empresa_id, nome_cargo, nivel, descricao) VALUES (?, ?, ?, ?)');
-      const cCEO = insCargo.run(teste01Id, 'Diretor Geral / CEO', 'C-Level', 'Liderança Geral').lastInsertRowid;
-      const cCTO = insCargo.run(teste01Id, 'Diretor de Tecnologia (CTO)', 'C-Level', 'Tecnologia').lastInsertRowid;
-      const cRH = insCargo.run(teste01Id, 'Diretora de Recursos Humanos (CHRO)', 'C-Level', 'RH & Gente').lastInsertRowid;
-      const cCRO = insCargo.run(teste01Id, 'Diretor Comercial (CRO)', 'C-Level', 'Vendas').lastInsertRowid;
-
-      // 3. Colaboradores
-      const insColab = db.prepare(`
-        INSERT INTO colaboradores (empresa_id, matricula, nome, email, telefone, cargo_id, departamento_id, data_admissao, status, foto)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ativo', ?)
-      `);
-
-      const pCEO = insColab.run(teste01Id, 'EMP-001', 'Victor Hugo Costa', 'victor.costa@empresa.com', '11981110001', cCEO, dCEO, '2022-01-15', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Victor%20Hugo%20Costa').lastInsertRowid;
-      const pCTO = insColab.run(teste01Id, 'EMP-002', 'Rodrigo Mendes Castro', 'rodrigo.castro@empresa.com', '11981110002', cCTO, dTI, '2022-02-01', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Rodrigo%20Mendes%20Castro').lastInsertRowid;
-      const pRH = insColab.run(teste01Id, 'EMP-003', 'Mariana Alcantara Paes', 'mariana.paes@empresa.com', '11981110003', cRH, dRH, '2022-03-10', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mariana%20Alcantara%20Paes').lastInsertRowid;
-      const pCRO = insColab.run(teste01Id, 'EMP-004', 'Carlos Eduardo Silva', 'carlos.silva@empresa.com', '11981110004', cCRO, dCOM, '2022-04-05', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos%20Eduardo%20Silva').lastInsertRowid;
-
-      // 4. Vínculo Hierárquico
-      db.prepare('UPDATE colaboradores SET gestor_id = ? WHERE id IN (?, ?, ?)').run(pCEO, pCTO, pRH, pCRO);
-
-      // 5. Crachás e Documentos
-      const insCracha = db.prepare(`
-        INSERT INTO crachas_dados (colaborador_id, empresa_id, tipo_sanguineo, rg, cpf, pis_pasep, data_emissao)
-        VALUES (?, ?, ?, ?, ?, ?, '2024-01-10')
-      `);
-      insCracha.run(pCEO, teste01Id, 'O+', 'MG-12.345.678', '529.000.001-14', '17000000013');
-      insCracha.run(pCTO, teste01Id, 'A+', 'SP-23.456.789', '529.000.002-03', '17000000021');
-      insCracha.run(pRH, teste01Id, 'B+', 'RJ-34.567.890', '529.000.003-86', '17000000030');
-      insCracha.run(pCRO, teste01Id, 'AB+', 'PR-45.678.901', '529.000.004-67', '17000000048');
     }
   } catch (err) {
     console.error('Erro ao executar seedDatabase:', err);
