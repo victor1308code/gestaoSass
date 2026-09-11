@@ -154,6 +154,19 @@ function seedDatabase(db) {
         insCracha.run(insertedIds[i], empresaId, colabsData[i].s, colabsData[i].rg, colabsData[i].cpf, colabsData[i].pis);
       }
     }
+
+    // 5. Seed Empresa TESTE01 (vazia, pronta para Control iD)
+    const teste01 = db.prepare("SELECT id FROM empresas WHERE slug = 'teste01'").get();
+    if (!teste01) {
+      const empResult = db.prepare(`
+        INSERT INTO empresas (razao_social, nome_fantasia, slug, email_contato, cor_primaria, plano_id, status)
+        VALUES ('TESTE01 LTDA', 'TESTE01', 'teste01', 'admin@teste01.com', '#2563eb', 1, 'ativo')
+      `).run();
+      db.prepare(`
+        INSERT INTO usuarios (empresa_id, nome, email, senha_hash, role, status)
+        VALUES (?, 'Admin TESTE01', 'admin@teste01.com', ?, 'admin', 'ativo')
+      `).run(empResult.lastInsertRowid, HASH_SENHA123);
+    }
   } catch (err) {
     console.error('Erro ao executar seedDatabase:', err);
   }
