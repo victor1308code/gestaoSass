@@ -68,6 +68,11 @@ const App = {
     if (userRole) userRole.textContent = u.role === 'admin' ? 'Administrador' : u.role;
   },
 
+  toggleMenuGroup(id) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('open');
+  },
+
   navigate(viewName, updateHash = true) {
     if (!this.views[viewName]) viewName = 'dashboard';
     this.state.currentView = viewName;
@@ -76,14 +81,25 @@ const App = {
       window.location.hash = viewName;
     }
 
-    // Atualiza links da sidebar
-    document.querySelectorAll('.nav-link').forEach(link => {
+    // Atualiza links e sublinks da sidebar
+    document.querySelectorAll('.nav-link, .nav-sublink').forEach(link => {
       if (link.getAttribute('data-view') === viewName) {
         link.classList.add('active');
       } else {
         link.classList.remove('active');
       }
     });
+
+    // Se a view for de Cadastros, destaca e abre o grupo automaticamente
+    const cadastrosViews = ['colaboradores', 'cargos', 'departamentos'];
+    const cadastrosGroup = document.getElementById('menu-group-cadastros');
+    if (cadastrosGroup) {
+      if (cadastrosViews.includes(viewName)) {
+        cadastrosGroup.classList.add('open', 'active-parent');
+      } else {
+        cadastrosGroup.classList.remove('active-parent');
+      }
+    }
 
     // Atualiza Títulos e Breadcrumbs
     const titles = {

@@ -31,24 +31,35 @@
           <span>Dashboard</span>
         </a>
 
-        <!-- GESTÃO DOS TIMES -->
-        <div class="nav-section-title">Gestão dos Times</div>
-        <a class="nav-link" data-view="departamentos" onclick="App.navigate('departamentos')">
-          <span class="nav-icon" id="icon-nav-departamentos"></span>
-          <span>Departamentos</span>
-        </a>
-        <a class="nav-link" data-view="cargos" onclick="App.navigate('cargos')">
-          <span class="nav-icon" id="icon-nav-cargos"></span>
-          <span>Cargos & Funções</span>
-        </a>
-        <a class="nav-link" data-view="colaboradores" onclick="App.navigate('colaboradores')">
-          <span class="nav-icon" id="icon-nav-colaboradores"></span>
-          <span>Colaboradores</span>
-        </a>
-        <a class="nav-link" data-view="usuarios" onclick="App.navigate('configuracoes')">
-          <span class="nav-icon" id="icon-nav-usuarios"></span>
-          <span>Usuários & Acessos</span>
-        </a>
+        <!-- CADASTROS (ESTILO CONTROL ID) -->
+        <div class="nav-group open" id="menu-group-cadastros">
+          <div class="nav-group-header" onclick="App.toggleMenuGroup('menu-group-cadastros')">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span class="nav-icon" id="icon-nav-cadastros"></span>
+              <span style="font-weight:600;">Cadastros</span>
+            </div>
+            <span class="nav-group-chevron">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </span>
+          </div>
+
+          <div class="nav-submenu">
+            <a class="nav-sublink" data-view="colaboradores" onclick="App.navigate('colaboradores')">
+              <span class="sublink-bullet">•</span>
+              <span>Colaboradores</span>
+            </a>
+            <a class="nav-sublink" data-view="cargos" onclick="App.navigate('cargos')">
+              <span class="sublink-bullet">•</span>
+              <span>Cargos</span>
+            </a>
+            <a class="nav-sublink" data-view="departamentos" onclick="App.navigate('departamentos')">
+              <span class="sublink-bullet">•</span>
+              <span>Departamentos</span>
+            </a>
+          </div>
+        </div>
 
         <!-- ESTRUTURA VISUAL -->
         <div class="nav-section-title">Estrutura & Visões</div>
@@ -77,6 +88,10 @@
 
         <!-- CONFIGURAÇÕES -->
         <div class="nav-section-title">Sistema</div>
+        <a class="nav-link" data-view="usuarios" onclick="App.navigate('configuracoes')">
+          <span class="nav-icon" id="icon-nav-usuarios"></span>
+          <span>Usuários & Acessos</span>
+        </a>
         <a class="nav-link" data-view="configuracoes" onclick="App.navigate('configuracoes')">
           <span class="nav-icon" id="icon-nav-configuracoes"></span>
           <span>Configurações</span>
@@ -173,9 +188,7 @@
       if (typeof Icons !== 'undefined') {
         const setIcon = (id, svg) => { const el = document.getElementById(id); if (el) el.innerHTML = svg; };
         setIcon('icon-nav-dashboard', Icons.dashboard);
-        setIcon('icon-nav-departamentos', Icons.building);
-        setIcon('icon-nav-cargos', Icons.briefcase);
-        setIcon('icon-nav-colaboradores', Icons.users);
+        setIcon('icon-nav-cadastros', Icons.layers);
         setIcon('icon-nav-usuarios', Icons.user);
         setIcon('icon-nav-organograma', Icons.tree);
         setIcon('icon-nav-carometro', Icons.image);
