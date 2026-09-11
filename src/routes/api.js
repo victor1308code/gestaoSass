@@ -32,6 +32,8 @@ router.put('/empresa', requireAuth, requireTenant, requireRole('admin'), empresa
 router.get('/empresa/usuarios', requireAuth, requireTenant, requireRole('admin'), empresaController.listUsers);
 router.post('/empresa/usuarios', requireAuth, requireTenant, requireRole('admin'), empresaController.createUser);
 router.delete('/empresa/usuarios/:id', requireAuth, requireTenant, requireRole('admin'), empresaController.deleteUser);
+router.post('/empresa/rehydrate', requireAuth, requireTenant, empresaController.rehydrate);
+router.post('/empresa/reset-test', requireAuth, requireTenant, requireRole('admin'), empresaController.resetTestData);
 
 // ── 3. DEPARTAMENTOS & HIERARQUIA ─────────────────────────────────────────
 router.get('/departamentos', requireAuth, requireTenant, departamentoController.list);

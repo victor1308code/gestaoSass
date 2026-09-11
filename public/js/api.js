@@ -102,9 +102,52 @@ const API = {
     return this.request(`/api/empresa/usuarios/${id}`, { method: 'DELETE' });
   },
 
+  getCurrentEmpresaId() {
+    try {
+      const token = localStorage.getItem('gestao_token');
+      if (!token) return 'default';
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.empresaId || 'default';
+    } catch (_) {
+      return 'default';
+    }
+  },
+
+  async rehydrateTenant(data) {
+    return this.request('/api/empresa/rehydrate', { method: 'POST', body: data });
+  },
+
+  async resetTestData() {
+    const empresaId = this.getCurrentEmpresaId();
+    localStorage.removeItem(`gestao_cache_colaboradores_${empresaId}`);
+    localStorage.removeItem(`gestao_cache_departamentos_${empresaId}`);
+    localStorage.removeItem(`gestao_cache_cargos_${empresaId}`);
+    return this.request('/api/empresa/reset-test', { method: 'POST' });
+  },
+
   // Departamentos
-  getDepartamentos() {
-    return this.request('/api/departamentos');
+  async getDepartamentos() {
+    const serverList = await this.request('/api/departamentos');
+    const empresaId = this.getCurrentEmpresaId();
+    const cacheKey = `gestao_cache_departamentos_${empresaId}`;
+
+    if (Array.isArray(serverList) && serverList.length > 0) {
+      localStorage.setItem(cacheKey, JSON.stringify(serverList));
+      return serverList;
+    }
+
+    if (!serverList || serverList.length === 0) {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const cachedList = JSON.parse(cached);
+          if (Array.isArray(cachedList) && cachedList.length > 0) {
+            return cachedList;
+          }
+        } catch (_) {}
+      }
+    }
+    return serverList || [];
   },
   getDepartamentosTree() {
     return this.request('/api/departamentos/tree');
@@ -120,8 +163,28 @@ const API = {
   },
 
   // Cargos
-  getCargos() {
-    return this.request('/api/cargos');
+  async getCargos() {
+    const serverList = await this.request('/api/cargos');
+    const empresaId = this.getCurrentEmpresaId();
+    const cacheKey = `gestao_cache_cargos_${empresaId}`;
+
+    if (Array.isArray(serverList) && serverList.length > 0) {
+      localStorage.setItem(cacheKey, JSON.stringify(serverList));
+      return serverList;
+    }
+
+    if (!serverList || serverList.length === 0) {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const cachedList = JSON.parse(cached);
+          if (Array.isArray(cachedList) && cachedList.length > 0) {
+            return cachedList;
+          }
+        } catch (_) {}
+      }
+    }
+    return serverList || [];
   },
   createCargo(data) {
     return this.request('/api/cargos', { method: 'POST', body: data });
@@ -134,9 +197,35 @@ const API = {
   },
 
   // Colaboradores
-  getColaboradores(filters = {}) {
+  async getColaboradores(filters = {}) {
     const params = new URLSearchParams(filters);
-    return this.request(`/api/colaboradores?${params.toString()}`);
+    const serverList = await this.request(`/api/colaboradores?${params.toString()}`);
+    const empresaId = this.getCurrentEmpresaId();
+    const cacheKey = `gestao_cache_colaboradores_${empresaId}`;
+    const hasFilters = Object.keys(filters).length > 0;
+
+    if (Array.isArray(serverList) && serverList.length > 0) {
+      if (!hasFilters) {
+        localStorage.setItem(cacheKey, JSON.stringify(serverList));
+      }
+      return serverList;
+    }
+
+    // Se o servidor retornou vazio (cold start ou reciclagem da Vercel)
+    if (!hasFilters && (!serverList || serverList.length === 0)) {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        try {
+          const cachedList = JSON.parse(cached);
+          if (Array.isArray(cachedList) && cachedList.length > 0) {
+            this.rehydrateTenant({ colaboradores: cachedList }).catch(console.error);
+            return cachedList;
+          }
+        } catch (_) {}
+      }
+    }
+
+    return serverList || [];
   },
   getColaboradorById(id) {
     return this.request(`/api/colaboradores/${id}`);
@@ -153,8 +242,18 @@ const API = {
   updatePhoto(id, foto) {
     return this.request(`/api/colaboradores/${id}/foto`, { method: 'PUT', body: { foto } });
   },
-  deleteColaborador(id) {
-    return this.request(`/api/colaboradores/${id}`, { method: 'DELETE' });
+  async deleteColaborador(id) {
+    const res = await this.request(`/api/colaboradores/${id}`, { method: 'DELETE' });
+    const empresaId = this.getCurrentEmpresaId();
+    const cacheKey = `gestao_cache_colaboradores_${empresaId}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      try {
+        const list = JSON.parse(cached).filter(c => c.id !== id);
+        localStorage.setItem(cacheKey, JSON.stringify(list));
+      } catch (_) {}
+    }
+    return res;
   },
   importColaboradores(colaboradores) {
     return this.request('/api/colaboradores/import', { method: 'POST', body: { colaboradores } });
@@ -197,8 +296,13 @@ const API = {
   pullControlIdApi(data) {
     return this.request('/api/controlid/pull-api', { method: 'POST', body: data });
   },
-  pullControlIdCloud(data) {
-    return this.request('/api/controlid/pull-cloud', { method: 'POST', body: data });
+  async pullControlIdCloud(data) {
+    const res = await this.request('/api/controlid/pull-cloud', { method: 'POST', body: data });
+    if (res && res.importados && res.importados.length > 0) {
+      const empresaId = this.getCurrentEmpresaId();
+      localStorage.setItem(`gestao_cache_colaboradores_${empresaId}`, JSON.stringify(res.importados));
+    }
+    return res;
   },
   testControlIdConnection(data) {
     return this.request('/api/controlid/test-connection', { method: 'POST', body: data });

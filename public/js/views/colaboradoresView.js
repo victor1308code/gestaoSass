@@ -22,6 +22,7 @@ const ColaboradoresView = {
             <a href="/api/controlid/export-csv" class="btn btn-outline" target="_blank" title="Download do CSV formatado com 76 colunas para Control iD">${Icons.download} CSV Control iD</a>
             <a href="/api/colaboradores/export/csv" class="btn btn-outline" target="_blank">${Icons.download} Exportar CSV</a>
             <button class="btn btn-outline" onclick="ColaboradoresView.openImportModal()">${Icons.upload} Importar CSV</button>
+            <button class="btn btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="ColaboradoresView.resetTestData()" title="Limpar todos os dados e começar do zero">🗑️ Zerar Teste</button>
             <button class="btn btn-green" onclick="ColaboradoresView.openCreateModal()">+ Novo Colaborador</button>
           </div>
         </div>
@@ -111,6 +112,19 @@ const ColaboradoresView = {
       document.getElementById('colaboradores-table-body').innerHTML = `
         <tr><td colspan="7" style="text-align:center; color:var(--danger);">Erro ao carregar colaboradores: ${err.message}</td></tr>
       `;
+    }
+  },
+
+  async resetTestData() {
+    if (!confirm('Deseja realmente limpar todos os colaboradores, setores e cargos deste teste para recomeçar do zero?')) {
+      return;
+    }
+    try {
+      await API.resetTestData();
+      API.toast('Empresa zerada com sucesso para novo teste.', 'success');
+      this.loadData();
+    } catch (err) {
+      API.toast(err.message, 'error');
     }
   },
 

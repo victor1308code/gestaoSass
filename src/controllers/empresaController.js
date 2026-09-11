@@ -142,6 +142,140 @@ const empresaController = {
       console.error('Erro ao remover usuário:', err);
       return res.status(500).json({ error: 'Erro interno ao remover usuário.' });
     }
+  },
+
+  // Re-hidrata dados a partir do cache do cliente (resiliência para Serverless na Vercel)
+  async rehydrate(req, res) {
+    try {
+      const { colaboradores, departamentos, cargos } = req.body;
+
+      db.exec('BEGIN');
+      try {
+        const deptMap = {};
+        if (Array.isArray(departamentos)) {
+          for (const d of departamentos) {
+            if (!d.nome) continue;
+            const existing = db.prepare('SELECT id FROM departamentos WHERE empresa_id = ? AND LOWER(nome) = LOWER(?)').get(req.empresaId, d.nome.trim());
+            if (!existing) {
+              const r = db.prepare(`
+                INSERT INTO departamentos (empresa_id, nome, sigla, ramal, cor, ordem)
+                VALUES (?, ?, ?, ?, ?, ?)
+              `).run(req.empresaId, d.nome.trim(), d.sigla || null, d.ramal || null, d.cor || '#2563eb', d.ordem || 1);
+              deptMap[d.nome.toLowerCase()] = r.lastInsertRowid;
+            } else {
+              deptMap[d.nome.toLowerCase()] = existing.id;
+            }
+          }
+        }
+
+        const cargoMap = {};
+        if (Array.isArray(cargos)) {
+          for (const cg of cargos) {
+            if (!cg.nome_cargo) continue;
+            const existing = db.prepare('SELECT id FROM cargos WHERE empresa_id = ? AND LOWER(nome_cargo) = LOWER(?)').get(req.empresaId, cg.nome_cargo.trim());
+            if (!existing) {
+              const r = db.prepare(`
+                INSERT INTO cargos (empresa_id, nome_cargo, nivel, cbo, descricao)
+                VALUES (?, ?, ?, ?, ?)
+              `).run(req.empresaId, cg.nome_cargo.trim(), cg.nivel || 'Pleno', cg.cbo || null, cg.descricao || null);
+              cargoMap[cg.nome_cargo.toLowerCase()] = r.lastInsertRowid;
+            } else {
+              cargoMap[cg.nome_cargo.toLowerCase()] = existing.id;
+            }
+          }
+        }
+
+        if (Array.isArray(colaboradores)) {
+          for (const c of colaboradores) {
+            if (!c.nome) continue;
+
+            let deptId = c.departamento_id;
+            if (!deptId && c.departamento_nome) {
+              deptId = deptMap[c.departamento_nome.toLowerCase()];
+              if (!deptId) {
+                const existing = db.prepare('SELECT id FROM departamentos WHERE empresa_id = ? AND LOWER(nome) = LOWER(?)').get(req.empresaId, c.departamento_nome.trim());
+                deptId = existing ? existing.id : db.prepare('INSERT INTO departamentos (empresa_id, nome) VALUES (?, ?)').run(req.empresaId, c.departamento_nome.trim()).lastInsertRowid;
+                deptMap[c.departamento_nome.toLowerCase()] = deptId;
+              }
+            }
+
+            let cargoId = c.cargo_id;
+            if (!cargoId && c.nome_cargo) {
+              cargoId = cargoMap[c.nome_cargo.toLowerCase()];
+              if (!cargoId) {
+                const existing = db.prepare('SELECT id FROM cargos WHERE empresa_id = ? AND LOWER(nome_cargo) = LOWER(?)').get(req.empresaId, c.nome_cargo.trim());
+                cargoId = existing ? existing.id : db.prepare("INSERT INTO cargos (empresa_id, nome_cargo, nivel) VALUES (?, ?, 'Pleno')").run(req.empresaId, c.nome_cargo.trim()).lastInsertRowid;
+                cargoMap[c.nome_cargo.toLowerCase()] = cargoId;
+              }
+            }
+
+            const existing = db.prepare('SELECT id FROM colaboradores WHERE empresa_id = ? AND (nome = ? OR (matricula IS NOT NULL AND matricula = ?))').get(req.empresaId, c.nome.trim(), c.matricula || '');
+            let colabId = existing ? existing.id : null;
+
+            if (!existing) {
+              const r = db.prepare(`
+                INSERT INTO colaboradores (empresa_id, matricula, nome, email, telefone, cargo_id, departamento_id, data_admissao, status, foto)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              `).run(
+                req.empresaId,
+                c.matricula || null,
+                c.nome.trim(),
+                c.email || null,
+                c.telefone || null,
+                cargoId || null,
+                deptId || null,
+                c.data_admissao || new Date().toISOString().split('T')[0],
+                c.status || 'ativo',
+                c.foto || null
+              );
+              colabId = r.lastInsertRowid;
+            }
+
+            if (colabId && (c.cpf || c.rg || c.pis_pasep || c.tipo_sanguineo)) {
+              const hasCracha = db.prepare('SELECT id FROM crachas_dados WHERE colaborador_id = ? AND empresa_id = ?').get(colabId, req.empresaId);
+              if (!hasCracha) {
+                db.prepare(`
+                  INSERT INTO crachas_dados (colaborador_id, empresa_id, tipo_sanguineo, rg, cpf, pis_pasep, data_emissao)
+                  VALUES (?, ?, ?, ?, ?, ?, CURRENT_DATE)
+                `).run(colabId, req.empresaId, c.tipo_sanguineo || 'O+', c.rg || null, c.cpf || null, c.pis_pasep || null);
+              }
+            }
+          }
+        }
+
+        db.exec('COMMIT');
+        return res.json({ success: true, message: 'Dados re-hidratados com sucesso!' });
+      } catch (err) {
+        db.exec('ROLLBACK');
+        throw err;
+      }
+    } catch (err) {
+      console.error('Erro na re-hidratação:', err);
+      return res.status(500).json({ error: 'Erro interno na re-hidratação.' });
+    }
+  },
+
+  // Reset total dos dados de teste da empresa
+  async resetTestData(req, res) {
+    try {
+      db.exec('BEGIN');
+      try {
+        db.prepare('DELETE FROM crachas_dados WHERE empresa_id = ?').run(req.empresaId);
+        db.prepare('DELETE FROM historico_movimentacoes WHERE empresa_id = ?').run(req.empresaId);
+        db.prepare('DELETE FROM colaboradores WHERE empresa_id = ?').run(req.empresaId);
+        db.prepare('DELETE FROM cargos WHERE empresa_id = ?').run(req.empresaId);
+        db.prepare('DELETE FROM departamentos WHERE empresa_id = ?').run(req.empresaId);
+        db.prepare('DELETE FROM dispositivos_controlid WHERE empresa_id = ?').run(req.empresaId);
+        db.exec('COMMIT');
+        return res.json({ success: true, message: 'Dados da empresa resetados com sucesso para 0.' });
+      } catch (e) {
+        db.exec('ROLLBACK');
+        throw e;
+      }
+    } catch (err) {
+      console.error('Erro ao resetar dados:', err);
+      return res.status(500).json({ error: 'Erro interno ao resetar dados.' });
+    }
   }
 };
 
