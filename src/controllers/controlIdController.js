@@ -114,7 +114,7 @@ const controlIdController = {
     try {
       const colaboradores = db.prepare(`
         SELECT c.*, d.nome as departamento_nome, cg.nome_cargo,
-               cr.cpf as cracha_cpf, cr.rg as cracha_rg, cr.tipo_sanguineo
+               cr.cpf as cracha_cpf, cr.rg as cracha_rg, cr.tipo_sanguineo, cr.pis_pasep as cracha_pis
         FROM colaboradores c
         LEFT JOIN departamentos d ON c.departamento_id = d.id
         LEFT JOIN cargos cg ON c.cargo_id = cg.id
@@ -142,19 +142,47 @@ const controlIdController = {
         "Nacionalidade", "Expirar senha atual", "Menu Documentos"
       ];
 
+      // Gerador de PIS com dígito verificador módulo 11 válido (puro 11 números, sem máscara)
+      const generateValidPIS = (num) => {
+        const base = '170' + String(num).padStart(7, '0');
+        const weights = [3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+        let sum = 0;
+        for (let j = 0; j < 10; j++) sum += parseInt(base[j], 10) * weights[j];
+        const rest = sum % 11;
+        const dv = (11 - rest) < 10 ? (11 - rest) : 0;
+        return base + dv;
+      };
+
+      // Gerador de CPF com dígitos verificadores válidos
+      const generateValidCPF = (num) => {
+        const base = '529' + String(num).padStart(6, '0');
+        let sum1 = 0;
+        for (let j = 0; j < 9; j++) sum1 += parseInt(base[j], 10) * (10 - j);
+        const rest1 = 11 - (sum1 % 11);
+        const dv1 = rest1 >= 10 ? 0 : rest1;
+        let sum2 = 0;
+        const base10 = base + dv1;
+        for (let j = 0; j < 10; j++) sum2 += parseInt(base10[j], 10) * (11 - j);
+        const rest2 = 11 - (sum2 % 11);
+        const dv2 = rest2 >= 10 ? 0 : rest2;
+        const raw = base + dv1 + dv2;
+        return `${raw.substring(0,3)}.${raw.substring(3,6)}.${raw.substring(6,9)}-${raw.substring(9,11)}`;
+      };
+
       const rows = [headerColumns.join(';')];
 
       for (let i = 0; i < colaboradores.length; i++) {
         const c = colaboradores[i];
         const numCracha = 1000 + i + 1;
-        const cpfPadrao = c.cracha_cpf || `000.000.${String(i+1).padStart(3, '0')}-00`;
-        const pisPadrao = `100.00000.${String(i+1).padStart(2, '0')}-1`;
+        const cpfPadrao = c.cracha_cpf || generateValidCPF(i + 1);
+        const pisLimpo = (c.cracha_pis || '').replace(/\D/g, '');
+        const pisPadrao = (pisLimpo.length === 11) ? pisLimpo : generateValidPIS(i + 1);
         const dataAdm = c.data_admissao ? c.data_admissao.split('-').reverse().join('/') : '15/01/2022';
 
         const row = [
           "",                             // id_funcionario
           cpfPadrao,                      // CPF (obrigatório)
-          pisPadrao,                      // PIS (obrigatório)
+          pisPadrao,                      // PIS (obrigatório - 11 dígitos numéricos sem máscara)
           c.nome,                         // Nome (obrigatório)
           c.matricula || `EMP-${c.id}`,   // Matrícula
           "1",                            // Folha

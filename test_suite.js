@@ -179,7 +179,8 @@ async function runTests() {
     const csvExportRes = await fetch(`http://localhost:${PORT}/api/controlid/export-csv`, { headers: authHeaders });
     const csvText = await csvExportRes.text();
     const csvHasHeader = csvText.includes('id_funcionario;CPF;PIS;Nome;Matrícula;');
-    logTest('13.2 GET /api/controlid/export-csv (CSV Oficial 76 Colunas)', csvExportRes.ok && csvHasHeader, `Cabeçalho verificado`);
+    const csvHasValidPIS = /;170\d{8};/.test(csvText);
+    logTest('13.2 GET /api/controlid/export-csv (CSV 76 Colunas & PIS 11 Dígitos Puro)', csvExportRes.ok && csvHasHeader && csvHasValidPIS, `PIS puro e cabeçalho 76 colunas`);
 
     // ── 13.3 TESTE SINCRONIZAÇÃO DE BANCO E HIERARQUIA VIA API ──
     const syncApiRes = await api('/api/controlid/sync-api', {
@@ -236,6 +237,15 @@ async function runTests() {
   } catch (err) {
     console.error('Erro nos testes:', err);
   } finally {
+    try {
+      db.prepare("DELETE FROM colaboradores WHERE matricula IN ('EMP-999', 'EMP-801', 'EMP-802')").run();
+      db.prepare("DELETE FROM departamentos WHERE nome IN ('Logística & Suprimentos', 'Armazém Central')").run();
+      db.prepare("DELETE FROM cargos WHERE nome_cargo = 'Coordenador de Logística'").run();
+      db.prepare("DELETE FROM dispositivos_controlid WHERE identificador_uuid = 'IDFACE-AUTO-TEST-99'").run();
+      db.prepare("DELETE FROM empresas WHERE slug = 'betacorp'").run();
+    } catch (cleanErr) {
+      console.error('Erro no cleanup de testes:', cleanErr);
+    }
     server.close();
   }
 }

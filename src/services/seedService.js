@@ -101,28 +101,28 @@ function seedDatabase(db) {
       const cAnalistaContabil = insCargo.run(empresaId, 'Analista Contábil & Fiscal', 'Pleno', 'Finanças').lastInsertRowid;
       const cAssistenteAdm = insCargo.run(empresaId, 'Assistente Administrativo', 'Júnior', 'Operações').lastInsertRowid;
 
-      // 20 Funcionários com Hierarquia
+      // 20 Funcionários com Hierarquia e Documentos Oficiais Válidos (PIS 11 dígitos puro + CPF válido)
       const colabsData = [
-        { n: "Victor Hugo Costa", m: "EMP-001", e: "victor.costa@inovatech.com", t: "(11) 98111-0001", c: cCEO, d: dCEO, g: null, adm: "2021-01-15", cpf: "123.456.789-01", rg: "MG-12.345.678", s: "O+" },
-        { n: "Rodrigo Mendes Castro", m: "EMP-002", e: "rodrigo.castro@inovatech.com", t: "(11) 98222-0002", c: cCTO, d: dTI, g: 0, adm: "2021-03-01", cpf: "234.567.890-12", rg: "SP-23.456.789", s: "A+" },
-        { n: "Mariana Alcantara Paes", m: "EMP-003", e: "mariana.paes@inovatech.com", t: "(11) 98333-0003", c: cHeadRH, d: dRH, g: 0, adm: "2021-04-10", cpf: "345.678.901-23", rg: "RJ-34.567.890", s: "B+" },
-        { n: "Carlos Eduardo Silva", m: "EMP-004", e: "carlos.silva@inovatech.com", t: "(11) 98444-0004", c: cCRO, d: dCOM, g: 0, adm: "2021-05-05", cpf: "456.789.012-34", rg: "SP-45.678.901", s: "O+" },
-        { n: "Fernando Pacheco Ramos", m: "EMP-005", e: "fernando.ramos@inovatech.com", t: "(11) 98555-0005", c: cCFO, d: dFIN, g: 0, adm: "2021-06-01", cpf: "567.890.123-45", rg: "MG-56.789.012", s: "AB+" },
-        { n: "Lucas Pinheiro Gomes", m: "EMP-006", e: "lucas.pinheiro@inovatech.com", t: "(11) 98666-0006", c: cTechLead, d: dDev, g: 1, adm: "2022-01-10", cpf: "678.901.234-56", rg: "SP-67.890.123", s: "A-" },
-        { n: "Juliana Moreira Lima", m: "EMP-007", e: "juliana.lima@inovatech.com", t: "(11) 98777-0007", c: cSeniorDev, d: dDev, g: 5, adm: "2022-02-01", cpf: "789.012.345-67", rg: "RJ-78.901.234", s: "O+" },
-        { n: "Gabriel Santana Rocha", m: "EMP-008", e: "gabriel.rocha@inovatech.com", t: "(11) 98888-0008", c: cPlenoDev, d: dDev, g: 5, adm: "2022-03-15", cpf: "890.123.456-78", rg: "SP-89.012.345", s: "B+" },
-        { n: "Ana Beatriz Fontes", m: "EMP-009", e: "ana.fontes@inovatech.com", t: "(11) 98999-0009", c: cJuniorDev, d: dDev, g: 5, adm: "2022-08-01", cpf: "901.234.567-89", rg: "PR-90.123.456", s: "A+" },
-        { n: "Eduardo Fagundes Neves", m: "EMP-010", e: "eduardo.neves@inovatech.com", t: "(11) 99111-0010", c: cDevOps, d: dCloud, g: 1, adm: "2022-02-10", cpf: "012.345.678-90", rg: "SP-01.234.567", s: "O-" },
-        { n: "Thiago Barbosa Santos", m: "EMP-011", e: "thiago.santos@inovatech.com", t: "(11) 99222-0011", c: cSecOps, d: dCloud, g: 9, adm: "2022-06-01", cpf: "135.246.789-01", rg: "SC-13.524.678", s: "B-" },
-        { n: "Leticia Duarte Toledo", m: "EMP-012", e: "leticia.toledo@inovatech.com", t: "(11) 99333-0012", c: cCoordRH, d: dTalentos, g: 2, adm: "2021-05-15", cpf: "246.357.890-12", rg: "SP-24.635.789", s: "A+" },
-        { n: "Marcio Rezende Costa", m: "EMP-013", e: "marcio.costa@inovatech.com", t: "(11) 99444-0013", c: cAnalistaDP, d: dTalentos, g: 11, adm: "2021-09-01", cpf: "357.468.901-23", rg: "MG-35.746.890", s: "O+" },
-        { n: "Camila Vasconcelos Prado", m: "EMP-014", e: "camila.prado@inovatech.com", t: "(11) 99555-0014", c: cAssistenteRH, d: dTalentos, g: 11, adm: "2023-02-01", cpf: "468.579.012-34", rg: "SP-46.857.901", s: "AB-" },
-        { n: "Beatriz Lima Miranda", m: "EMP-015", e: "beatriz.miranda@inovatech.com", t: "(11) 99666-0015", c: cGerenteVendas, d: dVendas, g: 3, adm: "2021-06-10", cpf: "579.680.123-45", rg: "RJ-57.968.012", s: "A+" },
-        { n: "Renato Albuquerque Dias", m: "EMP-016", e: "renato.dias@inovatech.com", t: "(11) 99777-0016", c: cExecutivoVendas, d: dVendas, g: 14, adm: "2021-10-01", cpf: "680.791.234-56", rg: "SP-68.079.123", s: "O+" },
-        { n: "Isabela Guimarães Nogueira", m: "EMP-017", e: "isabela.nogueira@inovatech.com", t: "(11) 99888-0017", c: cSDR, d: dVendas, g: 14, adm: "2023-01-15", cpf: "791.802.345-67", rg: "RS-79.180.234", s: "B+" },
-        { n: "Felipe Macedo Carvalho", m: "EMP-018", e: "felipe.carvalho@inovatech.com", t: "(11) 99999-0018", c: cCoordFin, d: dFIN, g: 4, adm: "2021-07-01", cpf: "802.913.456-78", rg: "SP-80.291.345", s: "A-" },
-        { n: "Patricia Antunes Souza", m: "EMP-019", e: "patricia.souza@inovatech.com", t: "(11) 99112-0019", c: cAnalistaContabil, d: dFIN, g: 17, adm: "2021-11-10", cpf: "913.024.567-89", rg: "DF-91.302.456", s: "O+" },
-        { n: "Danilo Faria Moreira", m: "EMP-020", e: "danilo.moreira@inovatech.com", t: "(11) 99223-0020", c: cAssistenteAdm, d: dFIN, g: 17, adm: "2023-04-01", cpf: "024.135.678-90", rg: "SP-02.413.567", s: "A+" }
+        { n: "Victor Hugo Costa", m: "EMP-001", e: "victor.costa@inovatech.com", t: "(11) 98111-0001", c: cCEO, d: dCEO, g: null, adm: "2021-01-15", cpf: "529.000.001-14", pis: "17000000013", rg: "MG-12.345.678", s: "O+" },
+        { n: "Rodrigo Mendes Castro", m: "EMP-002", e: "rodrigo.castro@inovatech.com", t: "(11) 98222-0002", c: cCTO, d: dTI, g: 0, adm: "2021-03-01", cpf: "529.000.002-03", pis: "17000000021", rg: "SP-23.456.789", s: "A+" },
+        { n: "Mariana Alcantara Paes", m: "EMP-003", e: "mariana.paes@inovatech.com", t: "(11) 98333-0003", c: cHeadRH, d: dRH, g: 0, adm: "2021-04-10", cpf: "529.000.003-86", pis: "17000000030", rg: "RJ-34.567.890", s: "B+" },
+        { n: "Carlos Eduardo Silva", m: "EMP-004", e: "carlos.silva@inovatech.com", t: "(11) 98444-0004", c: cCRO, d: dCOM, g: 0, adm: "2021-05-05", cpf: "529.000.004-67", pis: "17000000048", rg: "SP-45.678.901", s: "O+" },
+        { n: "Fernando Pacheco Ramos", m: "EMP-005", e: "fernando.ramos@inovatech.com", t: "(11) 98555-0005", c: cCFO, d: dFIN, g: 0, adm: "2021-06-01", cpf: "529.000.005-48", pis: "17000000056", rg: "MG-56.789.012", s: "AB+" },
+        { n: "Lucas Pinheiro Gomes", m: "EMP-006", e: "lucas.pinheiro@inovatech.com", t: "(11) 98666-0006", c: cTechLead, d: dDev, g: 1, adm: "2022-01-10", cpf: "529.000.006-29", pis: "17000000064", rg: "SP-67.890.123", s: "A-" },
+        { n: "Juliana Moreira Lima", m: "EMP-007", e: "juliana.lima@inovatech.com", t: "(11) 98777-0007", c: cSeniorDev, d: dDev, g: 5, adm: "2022-02-01", cpf: "529.000.007-00", pis: "17000000072", rg: "RJ-78.901.234", s: "O+" },
+        { n: "Gabriel Santana Rocha", m: "EMP-008", e: "gabriel.rocha@inovatech.com", t: "(11) 98888-0008", c: cPlenoDev, d: dDev, g: 5, adm: "2022-03-15", cpf: "529.000.008-90", pis: "17000000080", rg: "SP-89.012.345", s: "B+" },
+        { n: "Ana Beatriz Fontes", m: "EMP-009", e: "ana.fontes@inovatech.com", t: "(11) 98999-0009", c: cJuniorDev, d: dDev, g: 5, adm: "2022-08-01", cpf: "529.000.009-71", pis: "17000000099", rg: "PR-90.123.456", s: "A+" },
+        { n: "Eduardo Fagundes Neves", m: "EMP-010", e: "eduardo.neves@inovatech.com", t: "(11) 99111-0010", c: cDevOps, d: dCloud, g: 1, adm: "2022-02-10", cpf: "529.000.010-05", pis: "17000000102", rg: "SP-01.234.567", s: "O-" },
+        { n: "Thiago Barbosa Santos", m: "EMP-011", e: "thiago.santos@inovatech.com", t: "(11) 99222-0011", c: cSecOps, d: dCloud, g: 9, adm: "2022-06-01", cpf: "529.000.011-96", pis: "17000000110", rg: "SC-13.524.678", s: "B-" },
+        { n: "Leticia Duarte Toledo", m: "EMP-012", e: "leticia.toledo@inovatech.com", t: "(11) 99333-0012", c: cCoordRH, d: dTalentos, g: 2, adm: "2021-05-15", cpf: "529.000.012-77", pis: "17000000129", rg: "SP-24.635.789", s: "A+" },
+        { n: "Marcio Rezende Costa", m: "EMP-013", e: "marcio.costa@inovatech.com", t: "(11) 99444-0013", c: cAnalistaDP, d: dTalentos, g: 11, adm: "2021-09-01", cpf: "529.000.013-58", pis: "17000000137", rg: "MG-35.746.890", s: "O+" },
+        { n: "Camila Vasconcelos Prado", m: "EMP-014", e: "camila.prado@inovatech.com", t: "(11) 99555-0014", c: cAssistenteRH, d: dTalentos, g: 11, adm: "2023-02-01", cpf: "529.000.014-39", pis: "17000000145", rg: "SP-46.857.901", s: "AB-" },
+        { n: "Beatriz Lima Miranda", m: "EMP-015", e: "beatriz.miranda@inovatech.com", t: "(11) 99666-0015", c: cGerenteVendas, d: dVendas, g: 3, adm: "2021-06-10", cpf: "529.000.015-10", pis: "17000000153", rg: "RJ-57.968.012", s: "A+" },
+        { n: "Renato Albuquerque Dias", m: "EMP-016", e: "renato.dias@inovatech.com", t: "(11) 99777-0016", c: cExecutivoVendas, d: dVendas, g: 14, adm: "2021-10-01", cpf: "529.000.016-09", pis: "17000000161", rg: "SP-68.079.123", s: "O+" },
+        { n: "Isabela Guimarães Nogueira", m: "EMP-017", e: "isabela.nogueira@inovatech.com", t: "(11) 99888-0017", c: cSDR, d: dVendas, g: 14, adm: "2023-01-15", cpf: "529.000.017-81", pis: "17000000170", rg: "RS-79.180.234", s: "B+" },
+        { n: "Felipe Macedo Carvalho", m: "EMP-018", e: "felipe.carvalho@inovatech.com", t: "(11) 99999-0018", c: cCoordFin, d: dFIN, g: 4, adm: "2021-07-01", cpf: "529.000.018-62", pis: "17000000188", rg: "SP-80.291.345", s: "A-" },
+        { n: "Patricia Antunes Souza", m: "EMP-019", e: "patricia.souza@inovatech.com", t: "(11) 99112-0019", c: cAnalistaContabil, d: dFIN, g: 17, adm: "2021-11-10", cpf: "529.000.019-43", pis: "17000000196", rg: "DF-91.302.456", s: "O+" },
+        { n: "Danilo Faria Moreira", m: "EMP-020", e: "danilo.moreira@inovatech.com", t: "(11) 99223-0020", c: cAssistenteAdm, d: dFIN, g: 17, adm: "2023-04-01", cpf: "529.000.020-87", pis: "17000000200", rg: "SP-02.413.567", s: "A+" }
       ];
 
       const insertedIds = [];
@@ -147,11 +147,11 @@ function seedDatabase(db) {
 
       // Crachás e documentos
       const insCracha = db.prepare(`
-        INSERT INTO crachas_dados (colaborador_id, empresa_id, tipo_sanguineo, rg, cpf, data_emissao)
-        VALUES (?, ?, ?, ?, ?, '2024-01-10')
+        INSERT INTO crachas_dados (colaborador_id, empresa_id, tipo_sanguineo, rg, cpf, pis_pasep, data_emissao)
+        VALUES (?, ?, ?, ?, ?, ?, '2024-01-10')
       `);
       for (let i = 0; i < colabsData.length; i++) {
-        insCracha.run(insertedIds[i], empresaId, colabsData[i].s, colabsData[i].rg, colabsData[i].cpf);
+        insCracha.run(insertedIds[i], empresaId, colabsData[i].s, colabsData[i].rg, colabsData[i].cpf, colabsData[i].pis);
       }
     }
   } catch (err) {
