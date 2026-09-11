@@ -59,24 +59,9 @@ router.put('/colaboradores/:id/foto', requireAuth, requireTenant, requireRole('a
 router.delete('/colaboradores/:id', requireAuth, requireTenant, requireRole('admin'), colaboradorController.delete);
 router.post('/colaboradores/import', requireAuth, requireTenant, requireRole('admin'), colaboradorController.importBatch);
 
-// ── 6. DISPOSITIVOS & ACESSO CONTROL ID ──────────────────────────────────
-router.get('/dispositivos', requireAuth, requireTenant, controlIdController.list);
-router.post('/dispositivos', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.create);
-router.put('/dispositivos/:id', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.update);
-router.delete('/dispositivos/:id', requireAuth, requireTenant, requireRole('admin'), controlIdController.delete);
-router.post('/dispositivos/:id/sincronizar', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.syncEmployees);
-router.post('/dispositivos/:id/abrir', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.remoteUnlock);
-router.get('/dispositivos/logs', requireAuth, requireTenant, controlIdController.listLogs);
-
-// Sincronização Direta e Exportação Control iD
+// ── 6. INTEGRAÇÃO CONTROL ID (RHID CLOUD & CSV) ──────────────────────────
 router.get('/controlid/export-csv', requireAuth, requireTenant, controlIdController.exportCsv);
-router.post('/controlid/sync-api', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.syncApi);
-router.post('/controlid/pull-api', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.pullApi);
 router.post('/controlid/pull-cloud', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.pullCloud);
-router.post('/controlid/test-connection', requireAuth, requireTenant, controlIdController.testConnection);
-
-// Webhook Push dos equipamentos Control iD
-router.post('/controlid/push', controlIdController.handlePush);
 
 // ── 7. DASHBOARD & HISTÓRICO ──────────────────────────────────────────────
 router.get('/dashboard', requireAuth, requireTenant, dashboardController.getMetrics);

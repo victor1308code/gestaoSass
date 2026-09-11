@@ -12,7 +12,6 @@ const App = {
     departamentos: DepartamentosView,
     cargos: CargosView,
     colaboradores: ColaboradoresView,
-    dispositivos: DispositivosView,
     historico: HistoricoView,
     configuracoes: ConfiguracoesView
   },
@@ -109,7 +108,6 @@ const App = {
       departamentos: { title: 'Estrutura de Departamentos', desc: 'Gerenciamento de setores e lideranças', breadcrumb: 'Departamentos' },
       cargos: { title: 'Cargos & Funções', desc: 'Gerenciamento de posições, níveis hierárquicos e CBO', breadcrumb: 'Cargos & Funções' },
       colaboradores: { title: 'Quadro Geral de Colaboradores', desc: 'Gestão de pessoal, cargos e admissões', breadcrumb: 'Colaboradores' },
-      dispositivos: { title: 'Dispositivos & Catracas Control iD', desc: 'Monitoramento de hardware e acessos físicos', breadcrumb: 'Acesso Físico' },
       historico: { title: 'Histórico & Auditoria de Movimentações', desc: 'Registro auditável de transferências e alterações', breadcrumb: 'Auditoria' },
       configuracoes: { title: 'Configurações do Sistema & Usuários', desc: 'Perfil da empresa e controle de acessos', breadcrumb: 'Configurações' }
     };

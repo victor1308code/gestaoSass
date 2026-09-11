@@ -83,7 +83,7 @@ const DashboardView = {
             </div>
           </div>
 
-          <div class="kpi-stat-box" onclick="App.navigate('departamentos')" style="cursor:pointer;">
+          <div class="kpi-stat-box" onclick="App.navigate('cargos')" style="cursor:pointer;">
             <div class="kpi-stat-icon-wrapper" style="color:#d97706;">${Icons.briefcase}</div>
             <div class="kpi-stat-content">
               <div class="kpi-stat-value">${kpis.totalCargos}</div>
