@@ -192,7 +192,21 @@ const ColaboradoresView = {
     this.filterTable();
   },
 
-  openCreateModal(defaultDeptId = null) {
+  async ensureDependencies() {
+    if (!this.departamentos || this.departamentos.length === 0 || !this.cargos || this.cargos.length === 0) {
+      const [d, cg, cb] = await Promise.all([
+        API.getDepartamentos().catch(() => []),
+        API.getCargos().catch(() => []),
+        (!this.colaboradores || this.colaboradores.length === 0) ? API.getColaboradores().catch(() => []) : Promise.resolve(this.colaboradores)
+      ]);
+      this.departamentos = d || [];
+      this.cargos = cg || [];
+      this.colaboradores = cb || [];
+    }
+  },
+
+  async openCreateModal(defaultDeptId = null) {
+    await this.ensureDependencies();
     this.uploadedPhotoBase64 = null;
 
     const deptOpts = (this.departamentos || []).map(d => `
@@ -331,6 +345,7 @@ const ColaboradoresView = {
 
   async openEditModal(id) {
     try {
+      await this.ensureDependencies();
       const c = await API.getColaboradorById(id);
       this.uploadedPhotoBase64 = c.foto || null;
 
@@ -459,7 +474,11 @@ const ColaboradoresView = {
     }
   },
 
-  openMoverModal(id, nome, currentDeptId) {
+  async openMoverModal(id, nome, currentDeptId) {
+    if (!this.departamentos || this.departamentos.length === 0) {
+      this.departamentos = await API.getDepartamentos().catch(() => []);
+    }
+
     const deptOpts = (this.departamentos || []).map(d => `
       <option value="${d.id}" ${currentDeptId == d.id ? 'selected' : ''}>${d.nome} (${d.sigla || 'SET'})</option>
     `).join('');
