@@ -174,88 +174,90 @@ const controlIdController = {
       for (let i = 0; i < colaboradores.length; i++) {
         const c = colaboradores[i];
         const numCracha = 1000 + i + 1;
-        const cpfPadrao = c.cracha_cpf || generateValidCPF(i + 1);
+        const rawCpf = c.cracha_cpf || generateValidCPF(i + 1);
+        const cpfPadrao = rawCpf.replace(/\D/g, '');
         const pisLimpo = (c.cracha_pis || '').replace(/\D/g, '');
         const pisPadrao = (pisLimpo.length === 11) ? pisLimpo : generateValidPIS(i + 1);
         const dataAdm = c.data_admissao ? c.data_admissao.split('-').reverse().join('/') : '15/01/2022';
+        const telPuro = (c.telefone || '').replace(/\D/g, '') || '11981110000';
 
         const row = [
-          "",                             // id_funcionario
-          cpfPadrao,                      // CPF (obrigatório)
-          pisPadrao,                      // PIS (obrigatório - 11 dígitos numéricos sem máscara)
-          c.nome,                         // Nome (obrigatório)
-          c.matricula || `EMP-${c.id}`,   // Matrícula
-          "1",                            // Folha
-          `1234${i+1}/001`,               // CTPS
-          "InovaTech Soluções",           // Empresa
-          c.departamento_nome || "Geral", // Departamento
-          c.nome_cargo || "Colaborador",  // Cargo
-          "CC-001",                       // Centro de Custo
-          `${numCracha}`,                 // Código de Barras do Crachá
-          c.cracha_rg || "SP-12.345.678", // RG
-          c.telefone || "(11) 98111-0000",// Telefone
-          "100",                          // Ramal
-          c.email || `user${c.id}@empresa.com`, // Email
-          "true",                         // Habilitar login através de e-mail
-          "true",                         // Habilitar login através de CPF
-          "123456",                       // Senha para acesso através de CPF
-          "Av. Paulista, 1000",           // Endereço
-          "Bela Vista",                   // Bairro
-          "São Paulo",                    // Cidade
-          "SP",                           // UF
-          "01310-100",                    // CEP
-          dataAdm,                        // Data de Admissão
-          "Antonio Silva",                // Nome do Pai
-          "Maria Aparecida",              // Nome da Mãe
-          "15/05/1990",                   // Data de Nascimento
-          "São Paulo - SP",               // Naturalidade
-          `${numCracha}`,                 // Crachá
-          `${i+1}`,                       // Código para Uso no REP
-          "1234",                         // Senha para Uso no REP
-          i === 0 ? "true" : "false",     // Administrador do REP
-          "true",                         // Ativo
-          "masculino",                    // Gênero
-          "solteiro",                     // Estado Civíl
-          "1234",                         // PIN
-          "",                             // Data de Início do Banco de Horas
-          "false",                        // Utiliza Cerca Geográfica
-          "true",                         // Pode Trabalhar em Todos os Locais Cadastrados
-          "1",                            // Modo Quiosque
-          "true",                         // Habilita Acesso Mobile
-          "true",                         // Habilita Reconhecimento Facial
-          "true",                         // Permitir marcação mobile no acesso do funcionário
-          "true",                         // Permitir marcação mobile no modo quiosque
-          "true",                         // Habilita Marcação Web
-          "true",                         // Permite Alterações/Solicitações no Acesso Web
-          "false",                        // Foto Obrigatória no Mobile
-          "false",                        // Foto Obrigatória na Marcação Web
-          "true",                         // Menu Informações Gerais
-          "true",                         // Menu Ponto Diário
-          "true",                         // Menu Meu Histórico
-          "true",                         // Menu Minhas Solicitações
-          "false",                        // Menu Modo Quiosque
-          "",                             // Fluxo de Aprovação
-          "",                             // Horário de Trabalho (sem horários de catraca)
-          "",                             // Data de Início do Horário de Trabalho
-          "",                             // Perfil do Funcionário
-          "-3",                           // Fuso Horário
-          "true",                         // Menu Visualizar Ponto
-          "true",                         // Menu Assinar Ponto
-          "true",                         // Menu Espelho Ponto
-          "true",                         // Menu Comprovantes
-          "",                             // CNH
-          "B",                            // Categoria da CNH
-          "",                             // Vencimento da CNH
-          "",                             // Nome Social
-          "",                             // Data de Demissão
-          "Integrado via Gestão SaaS",    // Observações
-          "",                             // Motivo de demissão
-          "false",                        // Permite Lançar Apenas Justificativas
-          "(11) 98999-0000",              // Telefone de Emergência
-          c.tipo_sanguineo || "O+",       // Tipo Sanguineo
-          "Brasileira",                   // Nacionalidade
-          "false",                        // Expirar senha atual
-          "true"                          // Menu Documentos
+          "",                             // 0: id_funcionario (em branco para cadastrar novo)
+          cpfPadrao,                      // 1: CPF (apenas 11 números, sem máscara)
+          pisPadrao,                      // 2: PIS (apenas 11 números, sem máscara)
+          c.nome,                         // 3: Nome (obrigatório)
+          c.matricula || `EMP-${c.id}`,   // 4: Matrícula
+          "",                             // 5: Folha (vazio)
+          "",                             // 6: CTPS (vazio)
+          "",                             // 7: Empresa (vazio = preenchimento automático pelo padrão do sistema)
+          c.departamento_nome || "Geral", // 8: Departamento
+          c.nome_cargo || "Colaborador",  // 9: Cargo
+          "",                             // 10: Centro de Custo (vazio)
+          `${numCracha}`,                 // 11: Código de Barras do Crachá
+          c.cracha_rg || "12345678",      // 12: RG
+          telPuro,                        // 13: Telefone (apenas números)
+          "100",                          // 14: Ramal
+          c.email || `user${c.id}@empresa.com`, // 15: Email
+          "true",                         // 16: Habilitar login através de e-mail
+          "true",                         // 17: Habilitar login através de CPF
+          "123456",                       // 18: Senha para acesso através de CPF
+          "Av. Paulista, 1000",           // 19: Endereço
+          "Bela Vista",                   // 20: Bairro
+          "São Paulo",                    // 21: Cidade
+          "SP",                           // 22: UF
+          "01310100",                     // 23: CEP (apenas números)
+          dataAdm,                        // 24: Data de Admissão
+          "Antonio Silva",                // 25: Nome do Pai
+          "Maria Aparecida",              // 26: Nome da Mãe
+          "15/05/1990",                   // 27: Data de Nascimento
+          "São Paulo - SP",               // 28: Naturalidade
+          `${numCracha}`,                 // 29: Crachá
+          "",                             // 30: Código para Uso no REP (vazio)
+          "",                             // 31: Senha para Uso no REP (vazio)
+          "false",                        // 32: Administrador do REP
+          "true",                         // 33: Ativo
+          "masculino",                    // 34: Gênero
+          "solteiro",                     // 35: Estado Civíl
+          "1234",                         // 36: PIN
+          "",                             // 37: Data de Início do Banco de Horas
+          "false",                        // 38: Utiliza Cerca Geográfica
+          "true",                         // 39: Pode Trabalhar em Todos os Locais Cadastrados
+          "",                             // 40: Modo Quiosque
+          "true",                         // 41: Habilita Acesso Mobile
+          "true",                         // 42: Habilita Reconhecimento Facial
+          "true",                         // 43: Permitir marcação mobile no acesso do funcionário
+          "true",                         // 44: Permitir marcação mobile no modo quiosque
+          "true",                         // 45: Habilita Marcação Web
+          "true",                         // 46: Permite Alterações/Solicitações no Acesso Web
+          "false",                        // 47: Foto Obrigatória no Mobile
+          "false",                        // 48: Foto Obrigatória na Marcação Web
+          "true",                         // 49: Menu Informações Gerais
+          "true",                         // 50: Menu Ponto Diário
+          "true",                         // 51: Menu Meu Histórico
+          "true",                         // 52: Menu Minhas Solicitações
+          "false",                        // 53: Menu Modo Quiosque
+          "",                             // 54: Fluxo de Aprovação
+          "",                             // 55: Horário de Trabalho
+          "",                             // 56: Data de Início do Horário de Trabalho
+          "",                             // 57: Perfil do Funcionário
+          "-3",                           // 58: Fuso Horário
+          "true",                         // 59: Menu Visualizar Ponto
+          "true",                         // 60: Menu Assinar Ponto
+          "true",                         // 61: Menu Espelho Ponto
+          "true",                         // 62: Menu Comprovantes
+          "",                             // 63: CNH
+          "",                             // 64: Categoria da CNH
+          "",                             // 65: Vencimento da CNH
+          "",                             // 66: Nome Social
+          "",                             // 67: Data de Demissão
+          "Importação Integrada Gestão SaaS & Control iD", // 68: Observações
+          "",                             // 69: Motivo de demissão
+          "false",                        // 70: Permite Lançar Apenas Justificativas
+          "",                             // 71: Telefone de Emergência
+          "",                             // 72: Tipo Sanguineo
+          "Brasileira",                   // 73: Nacionalidade
+          "false",                        // 74: Expirar senha atual
+          "true"                          // 75: Menu Documentos
         ];
 
         rows.push(row.join(';'));
@@ -263,7 +265,7 @@ const controlIdController = {
 
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
       res.setHeader('Content-Disposition', 'attachment; filename="funcionarios_control_id.csv"');
-      return res.send(rows.join('\r\n'));
+      return res.send('\uFEFF' + rows.join('\r\n') + '\r\n');
     } catch (err) {
       console.error('Erro ao gerar CSV para Control iD:', err);
       return res.status(500).json({ error: 'Erro ao gerar planilha para Control iD.' });
