@@ -484,6 +484,187 @@ const controlIdController = {
       console.error('Erro no webhook push da Control iD:', err);
       return res.status(500).json({ error: 'Erro no processamento do evento.' });
     }
+  },
+
+  // ── 13. PUXAR COLABORADORES DO RHID CLOUD (API DA NUVEM - RHID.COM.BR) ──
+  async pullCloud(req, res) {
+    try {
+      const { email, password } = req.body || {};
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Informe o e-mail e a senha do RHiD Cloud.' });
+      }
+
+      // 1. Login no RHiD Cloud
+      const loginUrl = 'https://rhid.com.br/v2/api.svc/login';
+      const loginResp = await fetch(loginUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password: password.trim() })
+      });
+
+      if (!loginResp.ok) {
+        const errData = await loginResp.json().catch(() => ({}));
+        return res.status(401).json({
+          error: 'Falha na autenticação do RHiD Cloud. Verifique suas credenciais.',
+          detalhes: errData.error || errData.message || 'Credenciais inválidas.'
+        });
+      }
+
+      const loginData = await loginResp.json();
+      const token = loginData.accessToken;
+      if (!token) {
+        return res.status(401).json({ error: 'Token de acesso não retornado pelo RHiD Cloud.' });
+      }
+
+      const authHeaders = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+
+      // 2. Consulta Departamentos e Cargos (se existirem na API do RHiD)
+      const deptMap = new Map();
+      const roleMap = new Map();
+
+      try {
+        const deptResp = await fetch('https://rhid.com.br/v2/api.svc/department', { headers: authHeaders });
+        if (deptResp.ok) {
+          const depts = await deptResp.json();
+          const records = depts.records || (Array.isArray(depts) ? depts : []);
+          for (const d of records) {
+            deptMap.set(d.id, d.name || d.nome || `Dept ${d.id}`);
+          }
+        }
+      } catch (_) {}
+
+      try {
+        const rolesResp = await fetch('https://rhid.com.br/v2/api.svc/personroles', { headers: authHeaders });
+        if (rolesResp.ok) {
+          const roles = await rolesResp.json();
+          const records = roles.records || (Array.isArray(roles) ? roles : []);
+          for (const r of records) {
+            roleMap.set(r.id, r.name || r.nome || `Cargo ${r.id}`);
+          }
+        }
+      } catch (_) {}
+
+      // 3. Consulta Pessoas (Colaboradores)
+      const personResp = await fetch('https://rhid.com.br/v2/api.svc/person', { headers: authHeaders });
+      if (!personResp.ok) {
+        return res.status(personResp.status).json({ error: 'Erro ao consultar colaboradores no RHiD Cloud.' });
+      }
+
+      const personData = await personResp.json();
+      const colaboradoresRhid = personData.records || (Array.isArray(personData) ? personData : []);
+
+      if (colaboradoresRhid.length === 0) {
+        return res.json({
+          success: true,
+          message: 'Autenticado com sucesso, mas nenhum colaborador foi encontrado na conta RHiD.',
+          importados: 0,
+          colaboradores: []
+        });
+      }
+
+      const formatCPF = (raw) => {
+        if (!raw) return '';
+        const digits = String(raw).replace(/\D/g, '').padStart(11, '0');
+        if (digits.length === 11) {
+          return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+        }
+        return digits;
+      };
+
+      const formatPIS = (raw) => {
+        if (!raw) return '';
+        return String(raw).replace(/\D/g, '').padStart(11, '0');
+      };
+
+      const importados = [];
+
+      for (const p of colaboradoresRhid) {
+        const nome = p.name || 'Sem Nome';
+        const matricula = p.registration || `CID-${p.id}`;
+        const cpfFormatado = formatCPF(p.cpf);
+        const pisFormatado = formatPIS(p.pis);
+        const status = (p.status === 1 || p.status === '1' || p.status === true) ? 'ativo' : 'inativo';
+        const deptNome = deptMap.get(p.idDepartment) || null;
+        const roleNome = roleMap.get(p.idRole) || null;
+
+        let deptoId = null;
+        if (deptNome) {
+          let deptoRow = db.prepare('SELECT id FROM departamentos WHERE empresa_id = ? AND nome = ?').get(req.empresaId, deptNome);
+          if (!deptoRow) {
+            const insD = db.prepare('INSERT INTO departamentos (empresa_id, nome) VALUES (?, ?)').run(req.empresaId, deptNome);
+            deptoId = insD.lastInsertRowid;
+          } else {
+            deptoId = deptoRow.id;
+          }
+        }
+
+        let cargoId = null;
+        if (roleNome) {
+          let cargoRow = db.prepare('SELECT id FROM cargos WHERE empresa_id = ? AND nome_cargo = ?').get(req.empresaId, roleNome);
+          if (!cargoRow) {
+            const insC = db.prepare('INSERT INTO cargos (empresa_id, nome_cargo) VALUES (?, ?)').run(req.empresaId, roleNome);
+            cargoId = insC.lastInsertRowid;
+          } else {
+            cargoId = cargoRow.id;
+          }
+        }
+
+        let colabExistente = db.prepare(`
+          SELECT c.id FROM colaboradores c
+          LEFT JOIN crachas_dados cr ON c.id = cr.colaborador_id
+          WHERE c.empresa_id = ? AND (c.matricula = ? OR cr.cpf = ?)
+        `).get(req.empresaId, matricula, cpfFormatado);
+
+        let colabId;
+        const defaultPhoto = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(nome)}`;
+
+        if (colabExistente) {
+          colabId = colabExistente.id;
+          db.prepare(`
+            UPDATE colaboradores
+            SET nome = ?, matricula = ?, status = ?, departamento_id = COALESCE(?, departamento_id), cargo_id = COALESCE(?, cargo_id)
+            WHERE id = ? AND empresa_id = ?
+          `).run(nome, matricula, status, deptoId, cargoId, colabId, req.empresaId);
+        } else {
+          const ins = db.prepare(`
+            INSERT INTO colaboradores (empresa_id, matricula, nome, status, departamento_id, cargo_id, foto)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).run(req.empresaId, matricula, nome, status, deptoId, cargoId, defaultPhoto);
+          colabId = ins.lastInsertRowid;
+        }
+
+        const crachaExistente = db.prepare('SELECT id FROM crachas_dados WHERE colaborador_id = ?').get(colabId);
+        if (crachaExistente) {
+          db.prepare('UPDATE crachas_dados SET cpf = ?, pis_pasep = ? WHERE id = ?').run(cpfFormatado, pisFormatado, crachaExistente.id);
+        } else {
+          db.prepare(`
+            INSERT INTO crachas_dados (colaborador_id, empresa_id, cpf, pis_pasep)
+            VALUES (?, ?, ?, ?)
+          `).run(colabId, req.empresaId, cpfFormatado, pisFormatado);
+        }
+
+        importados.push({ id: colabId, nome, matricula, cpf: cpfFormatado, pis: pisFormatado });
+      }
+
+      db.prepare(`
+        INSERT INTO historico_movimentacoes (
+          empresa_id, colaborador_nome, usuario_id, usuario_nome, tipo, descricao
+        ) VALUES (?, 'RHiD Cloud Sync', ?, ?, 'integracao', ?)
+      `).run(req.empresaId, req.user.id, req.user.nome, `${importados.length} colaboradores importados via API Nuvem RHiD`);
+
+      return res.json({
+        success: true,
+        message: `Sucesso! ${importados.length} colaboradores importados da nuvem Control iD para esta empresa.`,
+        importados: importados.length,
+        colaboradores: importados
+      });
+    } catch (err) {
+      console.error('Erro no pullCloud Control iD:', err);
+      return res.status(500).json({ error: 'Erro ao conectar à nuvem do Control iD: ' + (err.message || '') });
+    }
   }
 };
 

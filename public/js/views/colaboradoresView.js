@@ -18,6 +18,7 @@ const ColaboradoresView = {
           </div>
 
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-primary" style="background:#0284c7; border-color:#0284c7;" onclick="ColaboradoresView.openPullCloudModal()">☁️ Puxar do Control iD Nuvem</button>
             <a href="/api/controlid/export-csv" class="btn btn-outline" target="_blank" title="Download do CSV formatado com 76 colunas para Control iD">${Icons.download} CSV Control iD</a>
             <a href="/api/colaboradores/export/csv" class="btn btn-outline" target="_blank">${Icons.download} Exportar CSV</a>
             <button class="btn btn-outline" onclick="ColaboradoresView.openImportModal()">${Icons.upload} Importar CSV</button>
@@ -571,6 +572,91 @@ const ColaboradoresView = {
       App.closeModal();
       this.loadData();
     } catch (err) {
+      API.toast(err.message, 'error');
+    }
+  },
+
+  openPullCloudModal() {
+    App.openModal(`
+      <div class="modal-header">
+        <h3>☁️ Puxar Colaboradores do Control iD Nuvem (RHiD)</h3>
+        <button class="btn-icon" onclick="App.closeModal()" style="border:none; background:none; cursor:pointer; font-size:14px;">✕</button>
+      </div>
+      <form onsubmit="ColaboradoresView.submitPullCloud(event)">
+        <div class="modal-body">
+          <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
+            Conecta na API oficial em nuvem do <strong>RHiD (rhid.com.br)</strong> e importa os colaboradores cadastrados diretamente para a empresa ativa (ex: <strong>TESTE01</strong>).
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">E-mail de Login no RHiD Cloud *</label>
+            <input type="email" name="email" id="rhid-cloud-email" class="form-control" placeholder="seu-email@empresa.com" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Senha de Acesso ao RHiD Cloud *</label>
+            <input type="password" name="password" id="rhid-cloud-password" class="form-control" placeholder="••••••••" required />
+          </div>
+
+          <div id="pull-cloud-feedback" style="display:none; padding:10px 12px; border-radius:var(--radius-sm); font-size:12px; margin-top:10px;"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
+          <button type="submit" id="btn-submit-pull-cloud" class="btn btn-primary" style="background:#0284c7;">
+            📥 Conectar & Importar Colaboradores
+          </button>
+        </div>
+      </form>
+    `);
+  },
+
+  async submitPullCloud(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const email = formData.get('email');
+    const password = formData.get('password');
+    const btn = document.getElementById('btn-submit-pull-cloud');
+    const fb = document.getElementById('pull-cloud-feedback');
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Conectando ao RHiD Cloud...';
+    }
+
+    if (fb) {
+      fb.style.display = 'block';
+      fb.style.background = '#eff6ff';
+      fb.style.border = '1px solid #bfdbfe';
+      fb.style.color = '#1e40af';
+      fb.innerHTML = 'Autenticando na API e buscando colaboradores...';
+    }
+
+    try {
+      const res = await API.pullControlIdCloud({ email, password });
+      API.toast(res.message, 'success');
+
+      if (fb) {
+        fb.style.background = '#f0fdf4';
+        fb.style.border = '1px solid #bbf7d0';
+        fb.style.color = '#15803d';
+        fb.innerHTML = `✅ <strong>${res.message}</strong>`;
+      }
+
+      setTimeout(() => {
+        App.closeModal();
+        ColaboradoresView.loadData();
+      }, 1200);
+    } catch (err) {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '📥 Conectar & Importar Colaboradores';
+      }
+      if (fb) {
+        fb.style.background = '#fef2f2';
+        fb.style.border = '1px solid #fecaca';
+        fb.style.color = '#991b1b';
+        fb.innerHTML = `❌ ${err.message || 'Erro ao comunicar com a API do RHiD Cloud.'}`;
+      }
       API.toast(err.message, 'error');
     }
   }

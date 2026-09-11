@@ -70,6 +70,7 @@ router.get('/dispositivos/logs', requireAuth, requireTenant, controlIdController
 router.get('/controlid/export-csv', requireAuth, requireTenant, controlIdController.exportCsv);
 router.post('/controlid/sync-api', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.syncApi);
 router.post('/controlid/pull-api', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.pullApi);
+router.post('/controlid/pull-cloud', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.pullCloud);
 router.post('/controlid/test-connection', requireAuth, requireTenant, controlIdController.testConnection);
 
 // Webhook Push dos equipamentos Control iD

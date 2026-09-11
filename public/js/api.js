@@ -197,6 +197,9 @@ const API = {
   pullControlIdApi(data) {
     return this.request('/api/controlid/pull-api', { method: 'POST', body: data });
   },
+  pullControlIdCloud(data) {
+    return this.request('/api/controlid/pull-cloud', { method: 'POST', body: data });
+  },
   testControlIdConnection(data) {
     return this.request('/api/controlid/test-connection', { method: 'POST', body: data });
   },
