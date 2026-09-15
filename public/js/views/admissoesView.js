@@ -55,7 +55,7 @@ const AdmissoesView = {
 
   async carregarLista() {
     try {
-      const res = await fetch('/api/admissao', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+      const res = await fetch('/api/admissao', { headers: { 'Authorization': `Bearer ${localStorage.getItem('gestao_token')}` } });
       const data = await res.json();
       
       if (!res.ok) {
@@ -134,7 +134,7 @@ const AdmissoesView = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('gestao_token')}`
         },
         body: JSON.stringify(payload)
       });
@@ -152,7 +152,7 @@ const AdmissoesView = {
 
   async abrirDetalhes(id) {
     try {
-      const res = await fetch(`/api/admissao/${id}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+      const res = await fetch(`/api/admissao/${id}`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('gestao_token')}` } });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Erro ao buscar detalhes');
 
@@ -264,7 +264,7 @@ const AdmissoesView = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('gestao_token')}`
         },
         body: JSON.stringify({ emailContabilidade: email })
       });
@@ -303,7 +303,7 @@ const AdmissoesView = {
     try {
       const res = await fetch(`/api/admissao/${id}/finalizar`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('gestao_token')}` }
       });
       
       const result = await res.json();
