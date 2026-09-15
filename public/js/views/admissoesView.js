@@ -83,6 +83,7 @@ const AdmissoesView = {
           <td style="padding:15px;">${statusMap[adm.status] || adm.status}</td>
           <td style="padding:15px;">
             <button class="btn btn-outline" style="font-size:12px; padding:5px 10px; margin-right:5px;" onclick="AdmissoesView.abrirDetalhes(${adm.id})">Ver Dados</button>
+            <button class="btn btn-outline" style="font-size:12px; padding:5px 10px; margin-right:5px; color:#ef4444; border-color:#fca5a5;" onclick="AdmissoesView.excluir(${adm.id})">Excluir</button>
             ${adm.status === 'analise_rh' ? `<button class="btn btn-outline" style="font-size:12px; padding:5px 10px; margin-right:5px;" onclick="AdmissoesView.enviarContabilidade(${adm.id})">Enviar p/ Contabilidade</button>` : ''}
             ${adm.status === 'enviado_contabilidade' ? `<button class="btn btn-primary" style="font-size:12px; padding:5px 10px;" onclick="AdmissoesView.finalizar(${adm.id})">Efetivar Funcionário</button>` : ''}
           </td>
@@ -303,6 +304,37 @@ const AdmissoesView = {
     try {
       const res = await fetch(`/api/admissao/${id}/finalizar`, {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('gestao_token')}` }
+      });
+      
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+
+      API.toast(result.message, 'success');
+      App.closeModal();
+      this.carregarLista();
+    } catch (err) {
+      API.toast(err.message, 'error');
+    }
+  },
+
+  excluir(id) {
+    App.openModal(`
+      <div style="padding: 24px;">
+        <h3 style="margin-top:0; margin-bottom:10px; color:#ef4444;">Excluir Admissão</h3>
+        <p style="color:#64748b; font-size:14px; margin-bottom:20px;">Tem certeza que deseja apagar este processo de admissão? Esta ação não pode ser desfeita.</p>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button class="btn btn-outline" onclick="App.closeModal()">Cancelar</button>
+          <button class="btn btn-primary" style="background:#ef4444; color:white; border:none;" onclick="AdmissoesView.confirmarExcluir(${id})">Sim, Excluir</button>
+        </div>
+      </div>
+    `);
+  },
+
+  async confirmarExcluir(id) {
+    try {
+      const res = await fetch(`/api/admissao/${id}`, {
+        method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('gestao_token')}` }
       });
       

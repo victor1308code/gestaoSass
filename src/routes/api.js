@@ -134,5 +134,6 @@ router.get('/admissao', requireAuth, requireTenant, requireRole('admin', 'gestor
 router.get('/admissao/:id', requireAuth, requireTenant, requireRole('admin', 'gestor'), admissaoController.getAdmissaoById);
 router.post('/admissao/:id/contabilidade', requireAuth, requireTenant, requireRole('admin', 'gestor'), admissaoController.encaminharParaContabilidade);
 router.post('/admissao/:id/finalizar', requireAuth, requireTenant, requireRole('admin', 'gestor'), admissaoController.finalizarAdmissao);
+router.delete('/admissao/:id', requireAuth, requireTenant, requireRole('admin', 'gestor'), admissaoController.deleteAdmissao);
 
 module.exports = router;

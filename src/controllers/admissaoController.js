@@ -201,6 +201,25 @@ const admissaoController = {
       console.error('Erro ao finalizar admissao:', err);
       return res.status(500).json({ error: 'Erro interno.' });
     }
+  },
+
+  // DELETE /api/admissao/:id
+  async deleteAdmissao(req, res) {
+    try {
+      const id = req.params.id;
+      const empresaId = req.empresaId;
+
+      const adm = db.prepare('SELECT id FROM admissoes WHERE id = ? AND empresa_id = ?').get(id, empresaId);
+      if (!adm) {
+        return res.status(404).json({ error: 'Admissão não encontrada.' });
+      }
+
+      db.prepare('DELETE FROM admissoes WHERE id = ?').run(id);
+      return res.json({ message: 'Admissão excluída com sucesso.' });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: 'Erro ao excluir admissão.' });
+    }
   }
 };
 
