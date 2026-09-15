@@ -1,5 +1,5 @@
 {
-  "name": "gestao-sass",
+  "name": "gestao-saas",
   "version": "1.0.0",
   "description": "Gestão SaaS — Plataforma Multi-Tenant de Gestão de Estrutura Organizacional, Colaboradores, Organograma, Crachás e Control iD",
   "main": "server.js",

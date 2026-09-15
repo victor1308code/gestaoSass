@@ -4,15 +4,18 @@ const fs = require('fs');
 const { seedDatabase } = require('../services/seedService');
 
 // No Vercel, o único diretório com permissão de escrita em runtime é /tmp
-const rootDbPath = path.join(__dirname, '..', '..', 'gestao_sass.db');
-const tmpDbPath = path.join('/tmp', 'gestao_sass.db');
+const rootDbPath = path.join(__dirname, '..', '..', 'gestao_saas.db');
+const legacyRootDbPath = path.join(__dirname, '..', '..', 'gestao_sass.db');
+const tmpDbPath = path.join('/tmp', 'gestao_saas.db');
 
-let dbPath = rootDbPath;
+let actualRootDbPath = fs.existsSync(rootDbPath) ? rootDbPath : (fs.existsSync(legacyRootDbPath) ? legacyRootDbPath : rootDbPath);
+
+let dbPath = actualRootDbPath;
 if (process.env.VERCEL) {
   dbPath = tmpDbPath;
-  if (fs.existsSync(rootDbPath) && !fs.existsSync(tmpDbPath)) {
+  if (fs.existsSync(actualRootDbPath) && !fs.existsSync(tmpDbPath)) {
     try {
-      fs.copyFileSync(rootDbPath, tmpDbPath);
+      fs.copyFileSync(actualRootDbPath, tmpDbPath);
     } catch (e) {
       console.error('Erro ao copiar banco para /tmp:', e);
     }
