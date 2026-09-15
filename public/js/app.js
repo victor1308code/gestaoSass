@@ -13,7 +13,8 @@ const App = {
     cargos: CargosView,
     colaboradores: ColaboradoresView,
     historico: HistoricoView,
-    configuracoes: ConfiguracoesView
+    configuracoes: ConfiguracoesView,
+    admissoes: AdmissoesView
   },
 
   async init() {
@@ -101,7 +102,7 @@ const App = {
     });
 
     // Se a view for de Cadastros, destaca e abre o grupo automaticamente
-    const cadastrosViews = ['colaboradores', 'cargos', 'departamentos'];
+    const cadastrosViews = ['colaboradores', 'cargos', 'departamentos', 'admissoes'];
     const cadastrosGroup = document.getElementById('menu-group-cadastros');
     if (cadastrosGroup) {
       if (cadastrosViews.includes(viewName)) {
@@ -120,7 +121,8 @@ const App = {
       cargos: { title: 'Cargos & Funções', desc: 'Gerenciamento de posições, níveis hierárquicos e CBO', breadcrumb: 'Cargos & Funções' },
       colaboradores: { title: 'Quadro Geral de Colaboradores', desc: 'Gestão de pessoal, cargos e admissões', breadcrumb: 'Colaboradores' },
       historico: { title: 'Histórico & Auditoria de Movimentações', desc: 'Registro auditável de transferências e alterações', breadcrumb: 'Auditoria' },
-      configuracoes: { title: 'Configurações do Sistema & Usuários', desc: 'Perfil da empresa e controle de acessos', breadcrumb: 'Configurações' }
+      configuracoes: { title: 'Configurações do Sistema & Usuários', desc: 'Perfil da empresa e controle de acessos', breadcrumb: 'Configurações' },
+      admissoes: { title: 'Admissões Digitais', desc: 'Painel de acompanhamento de novos colaboradores', breadcrumb: 'Cadastros / Admissões' }
     };
 
     const info = titles[viewName] || { title: 'Gestão SaaS', desc: '', breadcrumb: 'Painel' };

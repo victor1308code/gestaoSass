@@ -4,15 +4,18 @@ const fs = require('fs');
 const { seedDatabase } = require('../services/seedService');
 
 // No Vercel, o único diretório com permissão de escrita em runtime é /tmp
-const rootDbPath = path.join(__dirname, '..', '..', 'gestao_sass.db');
-const tmpDbPath = path.join('/tmp', 'gestao_sass.db');
+const rootDbPath = path.join(__dirname, '..', '..', 'gestao_saas.db');
+const legacyRootDbPath = path.join(__dirname, '..', '..', 'gestao_sass.db');
+const tmpDbPath = path.join('/tmp', 'gestao_saas.db');
 
-let dbPath = rootDbPath;
+let actualRootDbPath = fs.existsSync(rootDbPath) ? rootDbPath : (fs.existsSync(legacyRootDbPath) ? legacyRootDbPath : rootDbPath);
+
+let dbPath = actualRootDbPath;
 if (process.env.VERCEL) {
   dbPath = tmpDbPath;
-  if (fs.existsSync(rootDbPath) && !fs.existsSync(tmpDbPath)) {
+  if (fs.existsSync(actualRootDbPath) && !fs.existsSync(tmpDbPath)) {
     try {
-      fs.copyFileSync(rootDbPath, tmpDbPath);
+      fs.copyFileSync(actualRootDbPath, tmpDbPath);
     } catch (e) {
       console.error('Erro ao copiar banco para /tmp:', e);
     }
@@ -201,7 +204,22 @@ db.exec(`
     FOREIGN KEY (empresa_id) REFERENCES empresas (id) ON DELETE CASCADE
   );
 
-  -- 12. ÍNDICES
+  -- 12. ADMISSÕES DIGITAIS (ONBOARDING)
+  CREATE TABLE IF NOT EXISTS admissoes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    empresa_id INTEGER NOT NULL,
+    nome TEXT NOT NULL,
+    email TEXT NOT NULL,
+    telefone TEXT,
+    token_acesso TEXT UNIQUE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pendente_candidato',
+    dados_candidato TEXT,
+    documentos_anexos TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (empresa_id) REFERENCES empresas (id) ON DELETE CASCADE
+  );
+
+  -- 13. ÍNDICES
   CREATE INDEX IF NOT EXISTS idx_usuarios_empresa ON usuarios (empresa_id);
   CREATE INDEX IF NOT EXISTS idx_departamentos_empresa ON departamentos (empresa_id);
   CREATE INDEX IF NOT EXISTS idx_cargos_empresa ON cargos (empresa_id);
@@ -209,6 +227,8 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_colaboradores_dept ON colaboradores (departamento_id);
   CREATE INDEX IF NOT EXISTS idx_dispositivos_empresa ON dispositivos_controlid (empresa_id);
   CREATE INDEX IF NOT EXISTS idx_logs_acesso_empresa ON logs_acesso_controlid (empresa_id);
+  CREATE INDEX IF NOT EXISTS idx_admissoes_empresa ON admissoes (empresa_id);
+  CREATE INDEX IF NOT EXISTS idx_admissoes_token ON admissoes (token_acesso);
 `);
 
 // Popula o banco com os dados iniciais

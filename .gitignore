@@ -5,3 +5,6 @@ node_modules/
 dist/
 *.db-shm
 *.db-wal
+gestao_sass.db
+public/uploads/*
+!public/uploads/.gitkeep

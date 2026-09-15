@@ -38,7 +38,10 @@ app.use(session({
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Rotas da API REST
-app.use('/api', apiRoutes);
+app.use('/api', (req, res, next) => {
+  console.log(`[API Request] ${req.method} ${req.url}`);
+  next();
+}, apiRoutes);
 
 // Fallback SPA routing
 app.get('*', (req, res, next) => {

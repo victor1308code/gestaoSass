@@ -64,7 +64,75 @@ router.get('/controlid/export-csv', requireAuth, requireTenant, controlIdControl
 router.post('/controlid/pull-cloud', requireAuth, requireTenant, requireRole('admin', 'gestor'), controlIdController.pullCloud);
 
 // ── 7. DASHBOARD & HISTÓRICO ──────────────────────────────────────────────
+const admissaoController = require('../controllers/admissaoController');
+const multer = require('multer');
+const path = require('path');
+const crypto = require('crypto');
+
+// Configuração do Multer (Upload de Arquivos com Blindagem de Segurança)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../../public/uploads'));
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, crypto.randomBytes(16).toString('hex') + ext);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Lista branca estrita de tipos MIME permitidos
+  const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Formato inválido. Apenas PDF, JPG e PNG são permitidos.'));
+  }
+};
+
+const upload = multer({ 
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // Limite físico de 5MB por arquivo
+  },
+  fileFilter
+});
+
+// Middleware auxiliar para interceptar e formatar erros do Multer como JSON amigável
+const handleSecureUpload = (req, res, next) => {
+  const uploadMiddleware = upload.any();
+  uploadMiddleware(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'Falha de segurança: Um dos arquivos excede o limite estrito de 5MB.' });
+      }
+      return res.status(400).json({ error: `Erro no envio: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+};
+
+// ── 7. DASHBOARD & HISTÓRICO ──────────────────────────────────────────────
 router.get('/dashboard', requireAuth, requireTenant, dashboardController.getMetrics);
 router.get('/historico', requireAuth, requireTenant, historicoController.list);
+
+// ── 8. ADMISSÕES DIGITAIS (ONBOARDING) ────────────────────────────────────
+// Rotas Públicas (para o Candidato acessando via Token)
+router.get('/admissao/candidato/:token', admissaoController.getCandidatoByToken);
+router.post('/admissao/candidato/:token/documentos', handleSecureUpload, admissaoController.enviarDocumentosCandidato);
+
+// Status do sistema
+router.get('/config/smtp-status', (req, res) => {
+  res.json({ configurado: !!process.env.SMTP_HOST });
+});
+
+// Rotas Privadas (Painel do RH)
+router.post('/admissao/iniciar', requireAuth, requireTenant, requireRole('admin', 'gestor'), admissaoController.iniciarAdmissao);
+router.get('/admissao', requireAuth, requireTenant, requireRole('admin', 'gestor'), admissaoController.listarAdmissoes);
+router.get('/admissao/:id', requireAuth, requireTenant, requireRole('admin', 'gestor'), admissaoController.getAdmissaoById);
+router.post('/admissao/:id/contabilidade', requireAuth, requireTenant, requireRole('admin', 'gestor'), admissaoController.encaminharParaContabilidade);
+router.post('/admissao/:id/finalizar', requireAuth, requireTenant, requireRole('admin', 'gestor'), admissaoController.finalizarAdmissao);
 
 module.exports = router;

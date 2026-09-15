@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const ENV = require('../config/env');
 
-const SECRET = ENV.SESSION_SECRET || 'gestao_sass_jwt_super_secret_2026';
+const SECRET = ENV.SESSION_SECRET || 'gestao_saas_jwt_super_secret_2026';
 
 function signToken(payload, expiresInMs = 7 * 24 * 60 * 60 * 1000) { // 7 dias
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');

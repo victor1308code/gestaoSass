@@ -1,5 +1,5 @@
 {
-  "name": "gestao-sass",
+  "name": "gestao-saas",
   "version": "1.0.0",
   "description": "Gestão SaaS — Plataforma Multi-Tenant de Gestão de Estrutura Organizacional, Colaboradores, Organograma, Crachás e Control iD",
   "main": "server.js",
@@ -13,6 +13,8 @@
     "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
     "express": "^4.18.3",
-    "express-session": "^1.19.0"
+    "express-session": "^1.19.0",
+    "multer": "^2.4.0",
+    "nodemailer": "^10.0.10"
   }
 }

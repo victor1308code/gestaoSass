@@ -25,11 +25,12 @@ function seedDatabase(db) {
     if (!superAdmin) {
       db.prepare(`
         INSERT INTO usuarios (empresa_id, nome, email, senha_hash, role, status)
-        VALUES (NULL, 'Victor (SuperAdmin)', 'admin@gestaosass.com', ?, 'superadmin', 'ativo')
+        VALUES (NULL, 'Victor (SuperAdmin)', 'admin@gestaosaas.com', ?, 'superadmin', 'ativo')
       `).run(HASH_ADMIN123);
     } else {
-      db.prepare("UPDATE usuarios SET nome = 'Victor (SuperAdmin)' WHERE role = 'superadmin'").run();
+      db.prepare("UPDATE usuarios SET nome = 'Victor (SuperAdmin)', email = 'admin@gestaosaas.com' WHERE role = 'superadmin'").run();
     }
+    db.prepare("UPDATE usuarios SET email = 'admin@gestaosaas.com' WHERE email = 'admin@gestaosass.com'").run();
 
     // 3. Seed Empresa InovaTech
     const { totalEmpresas } = db.prepare('SELECT COUNT(*) as totalEmpresas FROM empresas').get() || { totalEmpresas: 0 };
