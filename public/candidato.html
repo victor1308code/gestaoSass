@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal do Candidato | Gestão SaaS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #2563eb;
+      --bg-color: #f3f4f6;
+    }
+    * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+    body { background-color: var(--bg-color); margin: 0; padding: 20px; display: flex; justify-content: center; }
+    .container { max-width: 700px; width: 100%; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    h1 { font-size: 24px; color: #1f2937; text-align: center; margin-bottom: 5px; }
+    p.subtitle { text-align: center; color: #6b7280; margin-bottom: 25px; line-height: 1.5; }
+    
+    .section-title { font-size: 18px; font-weight: 600; color: #111827; margin-top: 30px; margin-bottom: 15px; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-weight: 500; margin-bottom: 5px; color: #374151; font-size: 14px; }
+    .label-hint { display: block; font-size: 12px; color: #6b7280; margin-bottom: 8px; font-weight: 400; }
+    
+    input[type="text"], input[type="email"], input[type="file"] {
+      width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 5px; font-size: 14px;
+    }
+    .file-drop {
+      border: 1px dashed #d1d5db; padding: 10px; background: #f9fafb; border-radius: 5px;
+    }
+    .btn {
+      width: 100%; padding: 14px; background: var(--primary-color); color: white; border: none;
+      border-radius: 5px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 20px;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn:disabled { background: #9ca3af; cursor: not-allowed; }
+    
+    .message { display: none; padding: 15px; border-radius: 5px; margin-bottom: 20px; font-weight: 500; text-align: center; }
+    .message.success { background: #d1fae5; color: #065f46; display: block; }
+    .message.error { background: #fee2e2; color: #991b1b; display: block; }
+    
+    .loading-overlay {
+      display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255,255,255,0.8); align-items: center; justify-content: center;
+      border-radius: 8px; z-index: 10; font-weight: bold; font-size: 18px; color: var(--primary-color);
+    }
+    .container { position: relative; }
+    
+    .alert-info { background: #eff6ff; color: #1e40af; padding: 12px; border-radius: 5px; font-size: 13px; margin-bottom: 20px; line-height: 1.5; border-left: 4px solid #3b82f6;}
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="loading-overlay" id="loading">Enviando documentos, aguarde...</div>
+    
+    <h1>Portal de Admissão</h1>
+    <p class="subtitle">Complete seu cadastro anexando as cópias digitais dos documentos exigidos pelo RH.</p>
+    
+    <div id="statusMsg"></div>
+
+    <form id="formCandidato">
+      <!-- Identificação Básica -->
+      <div class="form-group">
+        <label>Nome Completo</label>
+        <input type="text" id="nome" name="nome" readonly style="background:#f3f4f6;">
+      </div>
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="email" name="email" readonly style="background:#f3f4f6;">
+      </div>
+      <div class="form-group">
+        <label>Telefone / WhatsApp</label>
+        <input type="text" id="telefone" name="telefone" placeholder="(00) 00000-0000" required>
+      </div>
+
+      <div class="alert-info">
+        <strong>Atenção:</strong> Por favor, envie arquivos legíveis (PDF, JPG ou PNG).<br>
+        O exame médico admissional é obrigatório e sem a realização deste, a admissão não poderá ser concluída.
+      </div>
+
+      <!-- Checklist e Documentos Principais -->
+      <div class="section-title">Checklist Principal</div>
+      
+      <div class="form-group">
+        <label>1. Carteira de Trabalho Digital (ou Cópia)</label>
+        <div class="file-drop"><input type="file" name="doc_ctps" accept="image/*,.pdf" multiple required></div>
+      </div>
+      <div class="form-group">
+        <label>2. Exame Médico Admissional</label>
+        <div class="file-drop"><input type="file" name="doc_exame_medico" accept="image/*,.pdf" required></div>
+      </div>
+      <div class="form-group">
+        <label>3. Foto 3x4 recente</label>
+        <div class="file-drop"><input type="file" name="doc_foto" accept="image/*" required></div>
+      </div>
+      
+      <div class="section-title">Documentação Pessoal</div>
+      
+      <div class="form-group">
+        <label>4. Carteira de Identidade (RG)</label>
+        <div class="file-drop"><input type="file" name="doc_rg" accept="image/*,.pdf" required></div>
+      </div>
+      <div class="form-group">
+        <label>5. CPF</label>
+        <div class="file-drop"><input type="file" name="doc_cpf" accept="image/*,.pdf" required></div>
+      </div>
+      <div class="form-group">
+        <label>6. PIS ou Cartão Cidadão</label>
+        <div class="file-drop"><input type="file" name="doc_pis" accept="image/*,.pdf" required></div>
+      </div>
+      <div class="form-group">
+        <label>7. Título de Eleitor</label>
+        <div class="file-drop"><input type="file" name="doc_titulo" accept="image/*,.pdf" required></div>
+      </div>
+      <div class="form-group">
+        <label>8. Comprovante de Endereço (recente e com CEP)</label>
+        <div class="file-drop"><input type="file" name="doc_endereco" accept="image/*,.pdf" required></div>
+      </div>
+      <div class="form-group">
+        <label>9. Comprovante de Escolaridade</label>
+        <div class="file-drop"><input type="file" name="doc_escolaridade" accept="image/*,.pdf" required></div>
+      </div>
+
+      <div class="section-title">Documentos Condicionais</div>
+      <p style="font-size: 13px; color: #6b7280; margin-top:-10px;">Envie apenas os que se aplicam ao seu perfil.</p>
+
+      <div class="form-group">
+        <label>10. Certificado Militar (Reservista)</label>
+        <span class="label-hint">Somente para homens.</span>
+        <div class="file-drop"><input type="file" name="doc_reservista" accept="image/*,.pdf"></div>
+      </div>
+      <div class="form-group">
+        <label>11. Carteira de Habilitação (CNH)</label>
+        <span class="label-hint">Quando necessário para a função exercida.</span>
+        <div class="file-drop"><input type="file" name="doc_cnh" accept="image/*,.pdf"></div>
+      </div>
+
+      <div class="section-title">Dependentes: Se Casado</div>
+      <div class="form-group">
+        <label>12. Certidão de Casamento</label>
+        <div class="file-drop"><input type="file" name="doc_casamento" accept="image/*,.pdf"></div>
+      </div>
+      <div class="form-group">
+        <label>13. RG e CPF do Cônjuge</label>
+        <span class="label-hint">Indispensável para o cadastramento como dependente no Imposto de Renda.</span>
+        <div class="file-drop"><input type="file" name="doc_conjuge" accept="image/*,.pdf" multiple></div>
+      </div>
+
+      <div class="section-title">Dependentes: Filhos (0 a 14 anos)</div>
+      <p style="font-size: 13px; color: #6b7280; margin-top:-10px;">Indispensável para o recebimento do Salário Família (se houver direito).</p>
+      
+      <div class="form-group">
+        <label>14. Certidão de Nascimento e CPF dos Filhos</label>
+        <div class="file-drop"><input type="file" name="doc_filhos_nasc_cpf" accept="image/*,.pdf" multiple></div>
+      </div>
+      <div class="form-group">
+        <label>15. Cartão de Vacina dos Filhos</label>
+        <div class="file-drop"><input type="file" name="doc_filhos_vacina" accept="image/*,.pdf" multiple></div>
+      </div>
+      <div class="form-group">
+        <label>16. Comprovante de Escolaridade (Filhos de 07 a 14 anos)</label>
+        <div class="file-drop"><input type="file" name="doc_filhos_escola" accept="image/*,.pdf" multiple></div>
+      </div>
+
+      <button type="submit" class="btn" id="btnSubmit">Finalizar e Enviar Documentos</button>
+    </form>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    const form = document.getElementById('formCandidato');
+    const statusMsg = document.getElementById('statusMsg');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const loading = document.getElementById('loading');
+    
+    if (!token) {
+      showError('Token de acesso não encontrado. Verifique o link enviado para seu e-mail.');
+      form.style.display = 'none';
+    } else {
+      loadCandidatoData();
+    }
+
+    // Função para comprimir a imagem antes do envio (Canvas API)
+    async function compressImage(file, maxWidth = 1600, maxHeight = 1600, quality = 0.8) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+              }
+            } else {
+              if (height > maxHeight) {
+                width = Math.round((width * maxHeight) / height);
+                height = maxHeight;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            canvas.toBlob((blob) => {
+              const novoArquivo = new File([blob], file.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(novoArquivo);
+            }, 'image/jpeg', quality);
+          };
+          img.onerror = reject;
+        };
+        reader.onerror = reject;
+      });
+    }
+
+    async function loadCandidatoData() {
+      try {
+        const res = await fetch(`/api/admissao/candidato/${token}`);
+        if (!res.ok) throw new Error('Link inválido ou processo já preenchido.');
+        
+        const data = await res.json();
+        
+        if (data.status !== 'pendente_candidato') {
+          showSuccess('Seus documentos já foram enviados. O RH entrará em contato em breve.');
+          form.style.display = 'none';
+        } else {
+          document.getElementById('nome').value = data.nome;
+          document.getElementById('email').value = data.email;
+          if (data.telefone) document.getElementById('telefone').value = data.telefone;
+        }
+      } catch (err) {
+        showError(err.message);
+        form.style.display = 'none';
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      loading.style.display = 'flex';
+      btnSubmit.textContent = 'Otimizando fotos e enviando (Aguarde)...';
+      btnSubmit.disabled = true;
+      statusMsg.className = 'message';
+      statusMsg.textContent = '';
+      
+      try {
+        const formData = new FormData();
+        const candidatoInfo = {
+          telefone: document.getElementById('telefone').value
+        };
+        
+        formData.append('dados_candidato', JSON.stringify(candidatoInfo));
+
+        const inputsDeArquivo = document.querySelectorAll('input[type="file"]');
+        
+        // Percorre todos os inputs de arquivo
+        for (const input of inputsDeArquivo) {
+          const nomeDoCampo = input.name;
+          for (let i = 0; i < input.files.length; i++) {
+            const arquivoOriginal = input.files[i];
+            
+            // Se for imagem, comprime. Se for PDF, mantém original.
+            if (arquivoOriginal.type.startsWith('image/')) {
+              try {
+                const arquivoComprimido = await compressImage(arquivoOriginal);
+                formData.append(nomeDoCampo, arquivoComprimido);
+              } catch (compressErr) {
+                // Fallback em caso de erro na compressão
+                formData.append(nomeDoCampo, arquivoOriginal);
+              }
+            } else {
+              formData.append(nomeDoCampo, arquivoOriginal);
+            }
+          }
+        }
+
+        const res = await fetch(`/api/admissao/candidato/${token}/documentos`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error || 'Erro ao enviar documentos');
+        
+        showSuccess('Tudo certo! Seus documentos foram enviados e o RH já foi notificado.');
+        form.style.display = 'none';
+        window.scrollTo(0, 0);
+      } catch (err) {
+        showError(err.message);
+        window.scrollTo(0, 0);
+      } finally {
+        loading.style.display = 'none';
+        btnSubmit.disabled = false;
+      }
+    });
+
+    function showError(msg) {
+      statusMsg.innerHTML = msg;
+      statusMsg.className = 'message error';
+    }
+    
+    function showSuccess(msg) {
+      statusMsg.innerHTML = '✅ ' + msg;
+      statusMsg.className = 'message success';
+    }
+  </script>
+</body>
+</html>

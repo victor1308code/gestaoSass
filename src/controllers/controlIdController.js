@@ -765,6 +765,17 @@ const controlIdController = {
       console.error('Erro no pullCloud Control iD:', err);
       return res.status(500).json({ error: 'Erro ao conectar à nuvem do Control iD: ' + (err.message || '') });
     }
+  },
+
+  // ── 14. ENVIAR NOVO COLABORADOR PARA O RHID CLOUD (PUSH) ──
+  async pushEmployeeCloud(nome, email) {
+    // Função simulada para o fluxo de admissão
+    // Na prática faria um POST para https://rhid.com.br/v2/api.svc/person
+    console.log('===================================================');
+    console.log(`[RHID CLOUD - PUSH] Cadastrando novo colaborador:`);
+    console.log(`Nome: ${nome} | E-mail: ${email}`);
+    console.log('===================================================');
+    return { success: true };
   }
 };
 
