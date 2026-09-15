@@ -59,12 +59,7 @@ const AdmissoesView = {
       const data = await res.json();
       
       if (!res.ok) {
-        if (res.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/login.html';
-          return;
-        }
-        throw new Error(data.error || 'Erro ao carregar admissões do servidor');
+        throw new Error(data.error || 'Erro ao carregar admissões do servidor (Status ' + res.status + ')');
       }
 
       const tbody = document.getElementById('admissoes-tbody');
